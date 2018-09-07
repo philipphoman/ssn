@@ -1,0 +1,6 @@
+"metric","density","tval","pval","qval"
+"diameter",0.7,2.155,0.033,1
+"E.global",0.25,-2.314,0.022,1
+"E.global",0.3,-2.319,0.022,1
+"num.hubs",0.45,-2.409,0.017,1
+"vulnerability",0.25,2.092,0.038,1

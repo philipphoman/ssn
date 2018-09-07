@@ -1,0 +1,1064 @@
+;; This is the .emacs configuration file
+;; Large parts of this have been copied from other people
+;; PH, 12/1/16
+;;----------------------------------------------------------------------
+;; Global
+;;----------------------------------------------------------------------
+;; get rid of yes or no
+(fset 'yes-or-no-p 'y-or-n-p)
+
+;; package archives
+(require 'package)
+(add-to-list 'package-archives 
+	     '("org" . "http://orgmode.org/elpa/"))
+(add-to-list 'package-archives 
+	     '("melpa" . "http://melpa.org/packages/"))
+(add-to-list 'package-archives 
+	     '("melpa-stable" . "http://stable.melpa.org/packages/"))
+(setq package-enable-at-startup nil)
+(package-initialize)
+
+(unless (package-installed-p 'use-package)
+  (package-refresh-contents)
+  (package-install 'use-package))
+
+(setq use-package-verbose t)
+(setq use-package-always-ensure t)
+
+(eval-when-compile (require 'use-package))
+(setq default-fill-column 72)
+
+;; Tell emacs where is your personal elisp lib dir
+;(add-to-list 'load-path "~/.emacs.d/lisp/")
+
+;(add-to-list 'load-path "~/.emacs.d/lisp/")
+;; keyboard binding to replace M-x
+(global-set-key "\C-x\C-m" 'execute-extended-command)
+(global-set-key "\C-c\C-m" 'execute-extended-command)
+;;----------------------------------------------------------------------
+;; disable mouse
+;;----------------------------------------------------------------------
+(define-minor-mode disable-mouse-mode
+  "A minor-mode that disables all mouse keybinds."
+  :global t
+  :lighter " "
+  :keymap (make-sparse-keymap))
+(dolist (type '(mouse down-mouse drag-mouse
+                      double-mouse triple-mouse))
+(dolist (prefix '("" C- M- S- M-S- C-M- C-S- C-M-S-))
+   ;; Yes, I actually HAD to go up to 7 here.
+    (dotimes (n 7)
+      (let ((k (format "%s%s-%s" prefix type n)))
+        (define-key disable-mouse-mode-map
+          (vector (intern k)) #'ignore)))))
+(disable-mouse-mode 1)
+;;----------------------------------------------------------------------
+;; visual appearance
+;;----------------------------------------------------------------------
+;; hide splash screen
+(setq inhibit-startup-screen t)
+
+;;----------------------------------------------------------------------
+;; org mode 
+;;----------------------------------------------------------------------
+;; remove comments from org document for use with export hook
+;; https://emacs.stackexchange.com/questions/22574/orgmode-export-how-to-prevent-a-new-line-for-comment-lines
+(defun delete-org-comments (backend)
+(loop for comment in (reverse (org-element-map 
+                       (org-element-parse-buffer)
+                  'comment 'identity))
+  do
+  (setf (buffer-substring (org-element-property :begin comment)
+              (org-element-property :end comment))
+        "")))
+
+;; add to export hook
+(add-hook 'org-export-before-processing-hook 'delete-org-comments)
+	
+
+;;----------------------------------------------------------------------
+;; Openwith
+;;----------------------------------------------------------------------
+(require 'openwith)
+(openwith-mode t)
+(setq openwith-associations
+	(list
+		(list (openwith-make-extension-regexp '("pdf"))
+        "pdfview" '(file))
+		    ;message '(file)))
+    (list (openwith-make-extension-regexp '("flac" "mp3" "wav"))
+        "vlc" '(file))
+    (list (openwith-make-extension-regexp '("avi" "flv" "mov" "mp4"
+                                          "mpeg" "mpg" "ogg" "wmv"))
+        "vlc" '(file))
+    (list (openwith-make-extension-regexp '("bmp" "jpeg" "jpg" "png"))
+        "pdfview" '(file))
+    (list (openwith-make-extension-regexp '("doc" "docx" "odt"))
+        ;"libreoffice" '("--writer" file))
+        "wordopen" '(file))
+    (list (openwith-make-extension-regexp '("ods" "xls" "xlsx"))
+        "libreoffice" '("--calc" file))
+    (list (openwith-make-extension-regexp '("odp" "pps" "ppt" "pptx"))
+        "libreoffice" '("--impress" file))
+     ))
+;;----------------------------------------------------------------------
+;; stolen from emacs meetup
+;;----------------------------------------------------------------------
+
+;; dynamic font size
+(defun fontify-frame (frame)
+  (interactive)
+  (if window-system
+      (progn
+        (if (> (x-display-pixel-width) 1400)
+            (set-frame-parameter frame 'font
+						 "-*-DejaVu Sans Mono-normal-normal-normal-*-18-*-*-*-m-0-iso10646-1")
+          (set-frame-parameter frame 'font
+						 ;"-*-DejaVu Sans Mono-normal-normal-normal-*-11-*-*-*-m-0-iso10646-1")))))
+;;             "Source Code Pro-9")))))
+             "DejaVu Sans Mono-10")))))
+;             "Fantasque Sans Mono-16")))))
+;; Fontify current frame
+(fontify-frame nil)
+
+;; Fontify any future frames
+(push 'fontify-frame after-make-frame-functions)
+
+;(set-default-font
+; "-*-DejaVu Sans Mono-normal-normal-normal-*-18-*-*-*-m-0-iso10646-1")
+(setq require-final-newline t)
+
+(use-package whitespace
+  :init
+  (setq whitespace-line-column 72)
+  (setq whitespace-style '(face lines-tail))
+  (add-hook 'prog-mode-hook 'whitespace-mode))
+
+(setq query-replace-highlight t)
+
+(setq visible-bell t)
+(setq-default dired-listing-switches "-alhv")
+
+(defun split-window-below-and-move()
+  (interactive)
+  (split-window-below)
+  (other-window 1))
+
+;; auto move cursor after split
+(defun split-window-right-and-move()
+  (interactive)
+  (split-window-right)
+  (other-window 1))
+
+(global-set-key "\C-x2" 'split-window-below-and-move)
+(global-set-key "\C-x3" 'split-window-right-and-move)
+
+;(require 'dired)
+;(setq dired-guess-shell-alist-user
+;'("\.pdf$" . "AcroRd32.exe"))
+
+(require 'dired-x)
+;(require 'dired+)
+(setq dired-dwim-target t)
+
+(use-package magit
+  :bind ("C-x g" . magit-status))
+
+;; disable scroll bars
+(tool-bar-mode -1)
+(menu-bar-mode -1)
+;(scroll-bar-mode -1)
+
+;; enable auto scrolling in e.g. ess
+(setq comint-scroll-to-bottom-on-input t)
+(setq comint-scroll-to-bottom-on-output t)
+(setq comint-move-point-for-output t)
+;;----------------------------------------------------------------------
+;; window size and frames
+;;----------------------------------------------------------------------
+(add-to-list 'default-frame-alist '(fullscreen . maximized))
+(if (display-graphic-p)
+		(progn
+		;; if gui
+		;(set-frame-size (selected-frame) 185 50)
+    (load-theme 'spolsky t)
+		(require 'powerline) 
+		(setq sml/no-confirm-load-theme t) 
+    (scroll-bar-mode -1)
+		;(setq powerline-height 25)
+		(sml/setup) 
+		(load-theme 'smart-mode-line-powerline t))
+  	;; else terminal
+	  ;(require 'powerline) 
+	  ;(setq sml/no-confirm-load-theme t) 
+	  ;(sml/setup) 
+ 	  ;(load-theme 'smart-mode-line-powerline t))
+	  (load-theme 'wombat t))
+		;(require 'powerline) 
+		;(setq sml/no-confirm-load-theme t) 
+		;(setq powerline-height 25)
+		;(sml/setup) 
+		;(load-theme 'smart-mode-line-powerline t))
+	  ;(disable-theme t))
+	  ;(load-theme 'solarized-dark t))
+;; linum mode
+(require 'linum)
+;(global-linum-mode)
+(setq linum-format "%4d ")
+
+;; set key for toggling between frames
+;,(global-set-key [C-tab] 'ace-window)
+
+;; to make S-Left/Right work
+(windmove-default-keybindings)
+
+;; make sure environment variables are available for emacs shell
+;;(exec-path-from-shell-initialize)
+
+;; help enforcing 80 character rule
+;(require 'modeline-posn)
+;(column-number-mode 1)
+;(size-indication-mode 1)
+;(setq modelinepos-column-limit 80)
+
+;; take care of identation
+(setq tab-width 2) ; or any other preferred value
+(setq default-tab-width 2) ; or any other preferred value
+(defvaralias 'c-basic-offset 'tab-width)
+(defvaralias 'cperl-indent-level 'tab-width)
+(defvaralias 'ess-indent-level 'tab-width)
+
+
+
+;;----------------------------------------------------------------------
+;; Bash environment
+;;----------------------------------------------------------------------
+(let ((path (shell-command-to-string ". ~/.bashrc; echo -n $PATH")))
+  (setenv "PATH" path)
+  (setq exec-path 
+        (append
+         (split-string-and-unquote path ":")
+         exec-path)))
+
+(setq fill-column 72)
+
+;;----------------------------------------------------------------------
+;; Bash environment for python
+;;----------------------------------------------------------------------
+(defun my-python ()
+  (interactive)
+  (ansi-term "/home/homan/mypython.sh"))
+
+(setq python-shell-interpreter "/home/homan/mypython.sh")
+;;----------------------------------------------------------------------
+;; ess
+;;----------------------------------------------------------------------
+(require 'ess)
+(require 'ess-site)
+(setq tab-width 2)
+;(whitespace-mode t)
+
+; let ess not ask for starting directory
+(setq ess-ask-for-ess-directory nil)
+; disable auto complete (takes too long)
+(setq ess-use-auto-complete nil)
+
+;(linum-mode t)
+(add-hook 'ess-mode-hook 
+  (lambda () 
+    (whitespace-mode t)
+    (linum-mode t)
+    ; if you uncomment this and reload .emacs from within an R buffer,
+    ; it should work as a hack
+    (setq ess-indent-with-fancy-comments nil)
+    (setq ess-style nil)))
+;;----------------------------------------------------------------------
+;; use clipboard 
+;;----------------------------------------------------------------------
+;(require 'simpleclip)
+(defun copy-to-x-clipboard ()
+  (interactive)
+  (let ((thing (if (region-active-p)
+      (buffer-substring-no-properties (region-beginning) (region-end))
+      (thing-at-point 'symbol))))
+    (simpleclip-set-contents thing)
+    (message "thing => clipboard!")))
+
+(defun paste-from-x-clipboard()
+  "Paste string clipboard"
+  (interactive)
+  (insert (simpleclip-get-contents)))
+
+;; Press `Alt-Y' to paste from clibpoard when in minibuffer
+(defun my/paste-in-minibuffer ()
+  (local-set-key (kbd "M-y") 'paste-from-x-clipboard))
+(add-hook 'minibuffer-setup-hook 'my/paste-in-minibuffer)
+
+;;----------------------------------------------------------------------
+;; evil-mode
+;;----------------------------------------------------------------------
+;; emulate vim as good as possible
+;; also, enable tab in terminal mode
+(setq evil-want-C-i-jump nil)
+(require 'evil)
+(add-to-list 'evil-emacs-state-modes 'ebib)
+(evil-mode t)
+;(evil-set-initial-state 'ebib 'emacs)
+(evil-make-overriding-map disable-mouse-mode-map)
+;;----------------------------------------------------------------------
+;; shell
+;; taken from: Tikhon Jelvis on quora.com
+;;----------------------------------------------------------------------
+;; I want an easy command for opening new shells:
+(defun new-shell (name)
+"Opens a new shell buffer with the given name in
+ asterisks (*name*) in the current directory and changes the
+ prompt to 'name>'."
+  (interactive "sName: ")
+  (pop-to-buffer (concat "*" name "*"))
+   (unless (eq major-mode 'shell-mode)
+    (shell (current-buffer))
+     (sleep-for 0 200)
+     (delete-region (point-min) (point-max))
+     (comint-simple-send (get-buffer-process (current-buffer)) 
+												 (concat
+													"export PS1=\"\033[33m"
+													name "\033[0m:\033[35m\\W\033[0m>\""))))
+(global-set-key (kbd "C-c s") 'new-shell)
+;;----------------------------------------------------------------------
+;; helm
+;;----------------------------------------------------------------------
+(require 'helm)
+(helm-mode t)
+(set-face-attribute 'helm-selection nil 
+                    :background "purple"
+                    :foreground "black")
+(setq helm-ff-transformer-show-only-basename nil
+      helm-adaptive-history-file
+			"~/.emacs.d/data/helm-history"
+      helm-yank-symbol-first                 t
+      helm-move-to-line-cycle-in-source      t
+      helm-buffers-fuzzy-matching            t
+      helm-ff-auto-update-initial-value      t)
+
+(autoload 'helm-descbinds      "helm-descbinds" t)
+(autoload 'helm-eshell-history "helm-eshell"    t)
+(autoload 'helm-esh-pcomplete  "helm-eshell"    t)
+
+(global-set-key (kbd "C-h a")    'helm-apropos)
+(global-set-key (kbd "C-h i")    'helm-info-emacs)
+(global-set-key (kbd "C-h b")    'helm-descbinds)
+
+(add-hook 'eshell-mode-hook
+    '(lambda ()
+     (define-key eshell-mode-map (kbd "TAB")     'helm-esh-pcomplete)
+     (define-key eshell-mode-map (kbd "C-c C-l") 'helm-eshell-history)))
+
+(global-set-key (kbd "C-x b")   'helm-mini)
+(global-set-key (kbd "C-x C-b") 'helm-buffers-list)
+(global-set-key (kbd "C-x C-f") 'helm-find-files)
+(global-set-key (kbd "C-x C-r") 'helm-recentf)
+(global-set-key (kbd "C-x r l") 'helm-filtered-bookmarks)
+(global-set-key (kbd "M-s o")   'helm-swoop)
+(global-set-key (kbd "M-s /")   'helm-multi-swoop)
+(global-set-key (kbd "M-x") 'helm-M-x)
+(global-set-key (kbd "C-x C-m") 'helm-M-x)
+(global-set-key (kbd "M-y") 'helm-show-kill-ring)
+;;----------------------------------------------------------------------
+;; Org
+;;----------------------------------------------------------------------
+(require 'org)
+(require 'org-element)
+;(require 'org-ref)
+;(require 'org-ref-pdf)
+(require 'org-contacts)
+(require 'org-agenda)
+
+;; window setup
+(setq org-agenda-restore-windows-after-quit t)
+
+(setq org-agenda-skip-scheduled-if-done t)
+
+;; capture stuff
+(global-set-key (kbd "C-c c") 'org-capture)
+(setq org-default-notes-file "~/db/org/notes.org")
+(setq org-contacts-files '("~/db/org/contacts.org"))
+;(global-set-key (kbd "C-c a") 
+;    (lambda () (interactive) (find-file "~/db/org/agenda.org")))
+(global-set-key (kbd "C-c a") 
+    (lambda () (interactive) (org-agenda-list)))
+(global-set-key (kbd "C-c |") 
+    (lambda () (interactive) (cfw:open-org-calendar)))
+(global-set-key (kbd "C-c o") 
+    (lambda () (interactive) (find-file "~/db/org/notes.org")))
+(global-set-key (kbd "C-c j") 
+    (lambda () (interactive) (find-file "~/db/org/journal.org")))
+(global-set-key (kbd "C-c t") 
+   (lambda () (interactive) (org-todo-list)))
+(global-set-key (kbd "C-c @") 
+   (lambda () (interactive) (find-file "~/db/org/contacts.org")))
+
+;; capture templates
+(setq org-capture-templates
+   (quote (("t" "todo" entry (file "~/db/org/tasks.org")
+            "* TODO %?\n SCHEDULED:  %T\n%a\n")
+           ("e" "event" entry (file "~/db/org/agenda.org")
+            "* %? :EVENT:\n%a\n%^T\n")
+           ("n" "note" entry (file "~/db/org/notes.org")
+            "* %? %^G \n%U\n%a%\n")
+           ("j" "journal" plain (file+datetree+prompt "~/db/org/journal.org")
+            "%?\n" :empty-lines 1)
+           ("c" "contact" entry (file+headline "~/db/org/contacts.org" "Contacts")
+               "* %?%(org-contacts-template-name) %^g
+:PROPERTIES:
+:EMAIL: %(org-contacts-template-email)
+:END:"))))
+
+(setq org-agenda-files (list "~/db/org/tasks.org"
+                             "~/db/org/notes.org"
+                             "~/db/org/contacts.org"
+                             "~/db/org/agenda.org"
+))
+
+;(setq org-capture-templates
+;'(("t" "Todo" entry (file+headline "~/db/org/notes.org" "Tasks")
+;		"* TODO %?\n  %i\n  %a")
+;  ("j" "Journal" entry (file+datetree "~/db/org/journal.org")
+;                "* %?\nEntered on %U\n  %i\n  %a")))
+
+;; Make windmove work in org-mode:
+(add-hook 'org-shiftup-final-hook 'windmove-up)
+(add-hook 'org-shiftleft-final-hook 'windmove-left)
+(add-hook 'org-shiftdown-final-hook 'windmove-down)
+(add-hook 'org-shiftright-final-hook 'windmove-right)
+
+(setq solarized-scale-org-headlines nil)
+
+;; allow ebib links
+;(org-add-link-type
+;"citep" 'ebib
+;(lambda (path desc format)
+;  (cond
+;   ((eq format 'latex)
+;    (format "\\citep[%s]{%s}" desc path)))))
+
+;; tell org where to find ditaa
+(setq org-ditaa-jar-path "/usr/bin/ditaa")
+
+;; use ox-extra to ignore certain headings
+(require 'ox-extra)
+(ox-extras-activate '(ignore-headlines))
+
+;; disable indenting
+(require 'org-indent)
+(org-indent-mode -1)
+
+;; we don't want raw inline calls to include a newline
+;;(setq org-babel-inline-result-wrap "well, %s")
+
+;; indentation
+(defun my-tab-related-stuff ()
+;   (setq indent-tabs-mode t)
+;   (setq tab-stop-list (number-sequence 4 200 4))
+;   (setq default-tab-width 2)
+   (setq tab-width 2))
+;   (setq indent-line-function 'insert-tab))
+(add-hook 'org-mode-hook 'my-tab-related-stuff)
+
+;; inline results wrapping
+(setq org-babel-inline-result-wrap "%s")
+
+;; active Babel languages
+(org-babel-do-load-languages
+ 'org-babel-load-languages
+ '((R . t)
+   (latex . t)
+   (dot . t)
+   (shell . t)
+   (ditaa . t)
+   ))
+
+;; we trust our own R code so we do not need to confirm
+(defun my-org-confirm-babel-evaluate (lang body)
+  (not (string-match "[Rlatexdotditaashell]" lang )))  ; don't ask for R
+(setq org-confirm-babel-evaluate 'my-org-confirm-babel-evaluate)
+
+(require 'ox-latex)
+;;; XeLaTeX customisations
+;; remove "inputenc" from default packages as it clashes with xelatex
+(setf org-latex-default-packages-alist
+  (remove '("AUTO" "inputenc" t) org-latex-default-packages-alist))
+
+;(setq org-latex-pdf-process '("latexmk -pdf 
+;	-pdflatex='xelatex -shell-escape -interaction nonstopmode' -bibtex -f %f "))
+  (setq org-latex-pdf-process
+  '("latexmk -pdflatex='xelatex -interaction nonstopmode' -pdf -bibtex -f %f"))
+
+
+;; avoid hypersetup
+(setq org-latex-with-hyperref nil)
+
+(setq org-latex-caption-above nil)
+
+;; turn of toc
+;;(setq org-export-with-toc nil)
+
+;; latex templates
+;\\usepackage[authoryear]{natbib}
+(add-to-list 'org-latex-classes
+        '("myarticle"
+          "\\documentclass[12pt]{article} 
+           \\usepackage[labelfont=bf]{caption}
+           \\usepackage{times}
+           [NO-DEFAULT-PACKAGES]"
+          ("\\section{%s}" . "\\section*{%s}")
+          ("\\subsection{%s}" . "\\subsection*{%s}")       
+          ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+          ("\\paragraph{%s}" . "\\paragraph*{%s}")
+          ("\\subparagraph{%s}" . "\\subparagraph*{%s}")))
+
+(add-to-list 'org-latex-classes
+        '("mybeamerxl"
+          "\\documentclass[presentation,20pt]{beamer}
+	         \\usetheme{default}
+	         \\usepackage[authoryear]{natbib}
+	         [NO-DEFAULT-PACKAGES]"))
+
+(add-to-list 'org-latex-classes
+        '("mybeamerm"
+          "\\documentclass[presentation]{beamer}
+	         \\usetheme{default}
+	         \\usepackage[authoryear]{natbib}
+	         [NO-DEFAULT-PACKAGES]"))
+
+
+
+(add-to-list 'org-latex-classes
+        '("cv"
+          "\\documentclass[10pt]{extarticle}
+	         \\usepackage[authoryear]{natbib}
+	         [NO-DEFAULT-PACKAGES]"))
+
+
+
+
+;;cfw:org-capture-template should be evaluated before requiring calfw-org
+(setq cfw:org-capture-template
+      '("t" "calfw2org" entry 
+        (file "~/db/org/tasks.org")
+        "* %?\n %(cfw:org-capture-day)"))
+
+
+(require 'calfw)
+(require 'calfw-org)
+(setq cfw:org-agenda-schedule-args '(:timestamp :scheduled :deadline))
+;;----------------------------------------------------------------------
+;; bibtex
+;;----------------------------------------------------------------------
+(require 'bibtex)
+(require 'org-ref)
+(require 'org-ref-pubmed)
+(require 'org-ref-wos)
+(require 'org-ref-scopus)
+(setq reftex-default-bibliography '("~/db/bibtex/master.bib"))
+(setq org-ref-default-bibliography '("~/db/bibtex/master.bib"))
+;(global-set-key (kbd "C-w C-e") (lambda)
+;								find-file (org-ref-default-bibliography))
+(global-set-key (kbd "C-c w") (lambda ()
+		(interactive) (find-file "~/db/bibtex/master.bib") (end-of-buffer)))
+(setq org-ref-pdf-directory "~/db/bibtex/pdf/")
+(setq org-ref-default-citation-link "citep")
+;(setq org-ref-bibliography-notes "~/db/org/refs.org")
+(setq org-ref-bibliography-notes "~/db/org/notes/")
+(setq helm-bibtex-bibliography '("~/db/bibtex/master.bib"))
+;(setq helm-bibtex-library-path '("~/db/bibtex/"))
+
+;; debug
+(setq helm-bibtex-notes-path "~/db/bibtex/notes/")
+(setq helm-bibtex-library-path "~/db/bibtex/")
+(setq helm-bibtex-pdf-field nil)
+(setq bibtex-completion-pdf-field nil)
+
+;; tags
+(setq bibtex-completion-additional-search-fields '(tags))
+
+;(setq helm-bibtex-notes-path "~/db/org/refs.org")
+(setq bibtex-completion-library-path '("~/db/bibtex/pdf/"))
+(setq helm-bibtex-cite-default-command "citep")
+(setq bibtex-completion-pdf-open-function
+  (lambda (fpath)
+    ;(call-process "pdfview" nil 0 nil fpath)))
+  (cond
+   ((eq system-type 'darwin) (setq app "pdfview"))
+   ((eq system-type 'gnu/linux)  (setq app "pdfview"))    
+   ((eq system-type 'cygwin) (setq app "cygstart"))    
+   ((eq system-type 'windows-nt) (setq app "cygstart"))
+   (t (setq app "pdfview")))
+
+    (call-process app nil 0 nil fpath)))
+    ;(call-process "cygstart" nil 0 nil fpath)))
+    ;(my-dired-find-file 'fpath)))
+;(setq bibtex-autokey-name-length )
+(setq bibtex-autokey-titleword-length 0)
+(setq bibtex-autokey-year-title-separator "")
+(setq bibtex-autokey-year-length 4)
+(setq bibtex-autokey-name-case-convert-function (quote identity))
+(setq bibtex-autokey-name-year-separator "")
+(setq bibtex-autokey-titleword-separator "")
+;(setq bibtex-autokey-name-case-convert-function "")
+
+;; custom function to open pdf from current bibtex key
+(defun bibtex-open-current-bibkey-as-pdf ()
+	"Tries to open pdf of current bibtex entry."
+	(interactive)
+  (save-excursion
+    (bibtex-beginning-of-entry)
+      ;; get the key and build pdf filename.
+      (re-search-forward bibtex-entry-maybe-empty-head)
+      (setq key (match-string bibtex-key-in-head))
+			(setq filename
+						(concat "~/db/bibtex/pdf/" key ".pdf"))
+
+	;(let ((filename (expand-file-name
+	;	(concat "~/db/bibtex/pdf/" (thing-at-point 'symbol) ".pdf"))))
+	(if (file-exists-p filename)
+	    ;(find-file filename)
+	    (org-ref-open-bibtex-pdf)
+      ;(call-process "pdfview" nil 0 nil filename)
+	    ;(message (concat "File: " filename " does not exist!"))
+	    (message (concat "File: " filename " does not exist!")))))
+(defun my-bibtex-mode-config ()
+  "For use in `bibtex-mode-hook'."
+  (local-set-key (kbd "C-c o") 'bibtex-open-current-bibkey-as-pdf) 
+  )
+(add-hook 'bibtex-mode-hook 'my-bibtex-mode-config)
+;;----------------------------------------------------------------------
+;; dired
+;;----------------------------------------------------------------------
+;(require 'openwith)
+;(openwith-mode t)
+;(setq openwith-associations '(("\\.pdf\\'" "pdfview" (file))))
+;; prevent <openwith> from interfering with mail attachments
+(require 'mm-util)
+(add-to-list 'mm-inhibit-file-name-handlers 'openwith-file-handler)
+
+
+;;----------------------------------------------------------------------
+;; matlab mode
+;;----------------------------------------------------------------------
+(autoload 'matlab-mode "matlab" "Matlab Editing Mode" t)
+(add-to-list
+ 'auto-mode-alist
+ '("\\.m$" . matlab-mode))
+(setq matlab-indent-function t)
+;; elisp setup for matlab-mode:
+;(setq matlab-shell-command "/Applications/MATLAB_R2015b.app/bin/matlab")
+(setq matlab-shell-command "/usr/local/bin/matlab")
+(setq matlab-shell-command-switches (list "-nodesktop"))
+(setq fill-column 72) ; where auto-fill should wrap
+;(turn-on-auto-fill))
+;(setq matlab-mode-hook 'my-matlab-mode-hook)
+;(autoload 'matlab-shell "matlab" "Interactive Matlab mode." t)
+;(defun my-matlab-shell-mode-hook ()
+;'())
+;(setq matlab-mode-hook 'my-matlab-mode-hook)
+;;----------------------------------------------------------------------
+;; engine mode
+;;----------------------------------------------------------------------
+(require 'engine-mode)
+(engine-mode t)
+(defengine amazon
+  "http://www.amazon.com/s/ref=nb_sb_noss?url=search-alias%3Daps&field-keywords=%s")
+
+(defengine pubmed
+	"https://www.ncbi.nlm.nih.gov/pubmed/?term=%s"
+  :keybinding "p")
+
+(defengine leo
+	"https://dict.leo.org/ende/?search=%s"
+  :keybinding "l")
+
+(defengine github
+  "https://github.com/search?ref=simplesearch&q=%s")
+
+(defengine google
+  "http://www.google.com/search?ie=utf-8&oe=utf-8&q=%s"
+  :keybinding "g")
+
+(defengine google-images
+  "http://www.google.com/images?hl=en&source=hp&biw=1440&bih=795&gbv=2&aq=f&aqi=&aql=&oq=&q=%s")
+
+(defengine google-maps
+  "http://maps.google.com/maps?q=%s"
+  :docstring "Mappin' it up.")
+
+(defengine project-gutenberg
+  "http://www.gutenberg.org/ebooks/search/?query=%s")
+
+(defengine rfcs
+  "http://pretty-rfc.herokuapp.com/search?q=%s")
+
+(defengine stack-overflow
+  "https://stackoverflow.com/search?q=%s")
+
+(defengine twitter
+  "https://twitter.com/search?q=%s")
+
+(defengine wikipedia
+  "http://www.wikipedia.org/search-redirect.php?language=en&go=Go&search=%s"
+  :keybinding "w"
+  :docstring "Searchin' the wikis.")
+
+(defengine wiktionary
+  "https://www.wikipedia.org/search-redirect.php?family=wiktionary&language=en&go=Go&search=%s")
+
+(defengine wolfram-alpha
+  "http://www.wolframalpha.com/input/?i=%s")
+
+(defengine youtube
+  "http://www.youtube.com/results?aq=f&oq=&search_query=%s")
+;;----------------------------------------------------------------------
+;; custom functions
+;;----------------------------------------------------------------------
+;; clickable contacts
+(require 'button-lock)
+(require 'hydra)
+(defun get-surrounding-text-with-property (property)
+  "Return text surrounding point with the text-property PROPERTY."
+  (let ((start) (end))
+    (when (get-text-property (point) property)
+      (save-excursion
+	(while (get-text-property (point) property)
+	  (backward-char))
+	(forward-char)
+	(setq start (point))
+	(while (get-text-property (point) property)
+	  (forward-char))
+	(setq end (point)))
+      (buffer-substring start end))))
+
+(defun get-contact-from-name-or-nickname (name-or-nickname)
+  "Return a contact from the org-contacts database for NAME-OR-NICKNAME."
+  (or
+   (assoc name-or-nickname (org-contacts-db))
+   ;; no assoc, so now we have to find a nickname
+   (catch 'contact
+     (dolist (contact (org-contacts-db))
+       (when (-contains? (s-split "," (or (cdr (assoc "NICKNAMES" (caddr contact))) " ")) name-or-nickname)
+	 (throw 'contact contact))))))
+
+(defun conditional-hydra-actions ()
+  "Construct code to create a hydra with conditional options."
+  (let ((code  '(defhydra org-contacts (:color blue)
+		  "Org contacts")))
+    (setq code
+	  (append
+	   code
+	   '(("o" (progn
+		    (backward-char)
+		    (let* ((name (get-surrounding-text-with-property 'org-contact))
+			   (contact (get-contact-from-name-or-nickname name))
+			   (contact-marker (nth 1 contact)))
+		      (switch-to-buffer (marker-buffer contact-marker))
+		      (goto-char (marker-position contact-marker))
+		      (show-subtree)))
+	      "Open contact"))))
+
+    (setq code
+	  (append
+	   code '(("e" (progn
+			 (backward-char)
+			 (let* ((name (get-surrounding-text-with-property 'org-contact))
+				(contact (get-contact-from-name-or-nickname name))
+				(email (cdr (assoc "EMAIL" (caddr contact))))))
+			 (compose-mail email))
+		   "Email contact"))))
+
+    ;; conditional menu for opening a URL
+    (let* ((name (get-surrounding-text-with-property 'org-contact))
+	   (contact (assoc name (org-contacts-db)))
+	   (url (cdr (assoc "URL" (caddr contact)))))
+      (when url
+	(setq code
+	      (append
+	       code '(("w" (progn
+			     (backward-char)
+			     (let* ((name (get-surrounding-text-with-property 'org-contact))
+				    (contact (get-contact-from-name-or-nickname name))
+				    (url (cdr (assoc "URL" (caddr contact)))))
+			       (if url
+				   (browse-url url)
+				 (message "No url found."))))
+		       "Open in browser"))))))
+    code))
+
+(append
+ (mapcar 'car (org-contacts-db))
+ (let ((nicknames '()))
+   (dolist (contact (org-contacts-db))
+     (when (assoc "NICKNAMES" (caddr contact))
+       (setq nicknames
+	     (append nicknames (s-split "," (cdr (assoc "NICKNAMES" (caddr contact))))))))
+   nicknames))
+
+(defun highlight-org-contacts ()
+  (button-lock-set-button
+   (regexp-opt
+    (append
+     (mapcar 'car (org-contacts-db))
+     (let ((nicknames '()))
+       (dolist (contact (org-contacts-db))
+	 (when (assoc "NICKNAMES" (caddr contact))
+	   (setq nicknames
+		 (append
+		  nicknames
+		  (s-split "," (cdr (assoc "NICKNAMES" (caddr contact))))))))
+       nicknames)))
+   (lambda ()
+     (interactive)
+     (eval (conditional-hydra-actions))
+     (org-contacts/body))
+   :face '((:background "black")
+    (:underline t))
+   :help-echo (format "An org contact")
+   :keyboard-binding (kbd "RET")
+   :additional-property 'org-contact))
+
+(add-hook 'text-mode-hook 'highlight-org-contacts)
+(add-hook 'text-mode-hook 'button-lock-mode)
+(add-hook 'org-mode-hook 'highlight-org-contacts)
+(add-hook 'org-mode-hook 'button-lock-mode)
+
+
+(defconst org-file-apps-defaults-cygwin
+  '((remote . emacs)
+    (t . "cygstart %s")
+    (system . "cygstart %s")
+    ("ps.gz"  . "gv %s")
+    ("eps.gz" . "gv %s")
+    ("dvi"    . "xdvi %s")
+    ("fig"    . "xfig %s")))
+
+(defun org-default-apps ()
+  "Return the default applications for this operating system."
+  (cond
+   ((eq system-type 'darwin)     org-file-apps-defaults-macosx)
+   ((eq system-type 'cygwin)     org-file-apps-defaults-cygwin) 
+   ((eq system-type 'windows-nt) org-file-apps-defaults-windowsnt)
+   (t org-file-apps-defaults-gnu)))
+
+; Will let you open a file externally with `C-u RET'. found at
+; http://lists.gnu.org/archive/html/bug-gnu-emacs/2012-11/msg01069.html
+(defun my-dired-find-file (&optional prefix)
+    (interactive "P")
+    (if prefix
+        (org-open-file (dired-get-file-for-visit) 'system)
+      (dired-find-file)))
+
+(define-key dired-mode-map "\r" 'my-dired-find-file)
+;;----------------------------------------------------------------------
+;; mu4e - the ultimate choice for mail
+;;----------------------------------------------------------------------
+;(add-to-list 'load-path "/usr/local/share/emacs/site-lisp/mu4e/")
+;;store org-mode links to messages
+;(require 'org-mu4e)
+;;store link to message if in header view, not to header query
+;(setq org-mu4e-link-query-in-headers-mode nil)
+
+;(require 'mu4e)
+(use-package mu4e
+  :load-path "/usr/local/share/emacs/site-lisp/mu4e"
+  :ensure f
+  :bind ("C-x 4" . mu4e)
+  :init
+	;(setq mu4e-maildir-list 'leave-func)
+  (setq mu4e-mu-binary "/usr/local/bin/mu")
+  (setq mu4e-attachment-dir  "~/db/downloads")
+  ;(add-hook 'mu4e-view-mode-hook 'visual-line-mode)
+  ;(add-hook 'message-send-hook 'mml-secure-message-sign-pgpmime)
+  (add-hook 'mu4e-compose-mode-hook
+            (defun my-setup-epa-hook ()
+              (epa-mail-mode)))
+  (add-hook 'mu4e-view-mode-hook
+            (defun my-view-mode-hook ()
+              (epa-mail-mode)))
+  ;(use-package mu4e-alert
+  ;  :init
+    (setq mu4e-maildir-shortcuts
+          '( ("/INBOX"               . ?i)
+             ("/Sent"                . ?s)
+             ("/Trash"               . ?t)))
+
+  ;  (mu4e-alert-set-default-style 'libnotify)
+  ;  (add-hook 'after-init-hook #'mu4e-alert-enable-notifications)
+  ;  (add-hook 'after-init-hook #'mu4e-alert-enable-mode-line-display))
+
+    (defun file-string (file)
+    "Read the contents of a file and return as a string."
+    (with-current-buffer (find-file-noselect file)
+      (buffer-string)))
+     
+
+  :config
+	(require 'mu4e-contrib)
+  (require 'org-mu4e)
+  (setq mu4e-contexts
+    `(,(make-mu4e-context
+       :name "unibe"
+       :match-func (lambda (msg)
+                     (when msg
+                      (mu4e-message-contact-field-matches msg
+                         :to "homan@puk.unibe.ch")))
+       :enter-func '()
+       :leave-func (lambda () (mu4e-clear-caches))
+       :vars '((mu4e-maildir . "~/mail/unibe")
+       ;(mu4e-mu-home . "~/.mu/unibe")
+       ;(mu4e-get-mail-command . "offlineimap -a unibe -f Archive")
+       (mu4e-get-mail-command .
+       "offlineimap -a unibe -f INBOX,Drafts,Archive,Sent,Trash,Junk")
+       ;(mu4e-get-mail-command . "mbsync -c ~/db/mail/.mbsyncrc -V unibe")
+       ;(mu4e-get-mail-command . "mbsync -V unibe")
+       (user-mail-address . "philipp.homan@upd.unibe.ch")
+       (mu4e-compose-signature . (file-string "~/db/.signature-unibe") 
+                                            )))
+       ,(make-mu4e-context
+       :name "mssm"
+       :match-func (lambda (msg)
+                    (when msg
+                     (mu4e-message-contact-field-matches msg
+                         :to "philipp.homan@mssm.edu")))
+       :enter-func '()
+       :leave-func (lambda () (mu4e-clear-caches))
+       :vars '((mu4e-maildir . "~/mail/mssm")
+       ;(mu4e-mu-home . "~/.mu/mssm")
+       (mu4e-get-mail-command . 
+	     "offlineimap -a mssm -f INBOX,Drafts,Archive,Sent,Trash,Junk")
+       ;(mu4e-get-mail-command . "mbsync -V mssm")
+       ;(mu4e-get-mail-command . "mbsync -c ~/db/mail/.mbsyncrc -V mssm")
+       (user-mail-address . "philipp.homan@mssm.edu")
+       (mu4e-compose-signature . (file-string "~/db/.signature-mssm") 
+															 )))
+
+       ,(make-mu4e-context
+       :name "nshs"
+       :match-func (lambda (msg)
+                    (when msg
+                     (mu4e-message-contact-field-matches msg
+                         :to "phoman1@northwell.edu")))
+       :enter-func '()
+       :leave-func (lambda () (mu4e-clear-caches))
+       :vars '((mu4e-maildir . "~/mail/nshs")
+       ;(mu4e-mu-home . "~/.mu/mssm")
+       (mu4e-get-mail-command . 
+	     "offlineimap -a nshs -f INBOX,Drafts,Archive,Sent,Trash,Junk")
+       ;(mu4e-get-mail-command . "mbsync -V mssm")
+       ;(mu4e-get-mail-command . "mbsync -c ~/db/mail/.mbsyncrc -V mssm")
+       (user-mail-address . "phoman1@northwell.edu")
+       (mu4e-compose-signature . (file-string "~/db/.signature-nshs") 
+                                            )))))
+
+  (setq mu4e-drafts-folder "/Drafts")
+  (setq mu4e-sent-folder   "/Sent")
+  (setq mu4e-trash-folder  "/Trash")
+  (setq mu4e-refile-folder "/Archive")
+  (setq mu4e-change-filenames-when-moving t)
+  (setq mu4e-sent-messages-behavior 'delete)
+  (setq shr-color-visible-luminance-min 80)
+	;(setq msg2pdf 
+
+	;; customize the reply-quote-string
+  (setq message-citation-line-format
+				"On %a %d %b %Y at %r, %f wrote:\n")
+  ;; choose to use the formatted string
+  (setq message-citation-line-function
+				'message-insert-formatted-citation-line)
+
+
+  (setq mu4e-html2text-command 'mu4e-shr2text)
+
+  (setq user-full-name  "Philipp Homan")
+  (setq mu4e-update-interval 180)
+
+  (setq message-send-mail-function 'message-send-mail-with-sendmail)
+  (setq sendmail-program "/usr/bin/msmtp")
+  (setq message-sendmail-extra-arguments '("--read-envelope-from"))
+  (setq message-sendmail-f-is-evil 't)
+  (setq mu4e-completing-read-function 'completing-read)
+  ;(setq mu4e-alert-interesting-mail-query
+  ;      (concat
+  ;       "flag:unread"
+  ;       " AND NOT flag:trashed"
+  ;       " AND maildir:"
+  ;       "\"/INBOX\""))
+
+  (setq org-mu4e-link-query-in-headers-mode nil)
+  ;(setq mu4e-headers-skip-duplicates t)
+  (add-to-list 'mu4e-view-actions
+               '("xViewXWidget" . mu4e-action-view-with-xwidget) t))
+
+  (require 'gnus-dired)
+  ;; make the `gnus-dired-mail-buffers' function also work on
+  ;; message-mode derived modes, such as mu4e-compose-mode
+  (defun gnus-dired-mail-buffers ()
+    "Return a list of active message buffers."
+    (let (buffers)
+      (save-current-buffer
+        (dolist (buffer (buffer-list t))
+          (set-buffer buffer)
+          (when (and (derived-mode-p 'message-mode)
+				  					 (null message-sent-message-via))
+            (push (buffer-name buffer) buffers))))
+      (nreverse buffers)))
+
+  (setq gnus-dired-mail-mode 'mu4e-user-agent)
+  (add-hook 'dired-mode-hook 'turn-on-gnus-dired-mode)
+
+;;----------------------------------------------------------------------
+;; Tramp
+;;----------------------------------------------------------------------
+(setq password-cache-expiry nil)
+(setq tramp-verbose 6)
+
+
+;; helm-ify folder management 
+;(defun pyl-mu4e-read-maildir
+;		(prompt maildirs predicate require-match initial-input)
+;    (helm-comp-read prompt maildirs
+;     :name prompt
+;     :must-match t))
+;
+;(setq mu4e-completing-read-function 'pyl-mu4e-read-maildir)
+;;----------------------------------------------------------------------
+;; custom stuff
+;;----------------------------------------------------------------------
+(custom-set-variables
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(custom-safe-themes
+	 (quote
+		("d5b121d69e48e0f2a84c8e4580f0ba230423391a78fcb4001ccb35d02494d79e" "0c29db826418061b40564e3351194a3d4a125d182c6ee5178c237a7364f0ff12" default)))
+ '(ebib-layout (quote custom))
+ '(matlab-indent-level 2)
+ '(org-agenda-files
+	 (quote
+		("~/db/org/tasks.org" "~/db/org/notes.org" "~/db/org/contacts.org" "~/db/org/agenda.org")))
+ '(org-export-backends (quote (ascii html icalendar latex md odt)))
+ '(package-selected-packages
+	 (quote
+		(helm-bibtex helm-ispell popup-edit-menu flyspell-popup wn-mode go-autocomplete xclip stan-mode mu4e-maildirs-extension simpleclip dired+ tramp-term ssh blackboard-theme matlab-mode mu4e-alert use-package button-lock calfw openwith org-ref smart-mode-line-powerline-theme sublime-themes org-wc org-ac popup-imenu popwin popup-complete synosaurus synonyms helm-flyspell flyspell-correct ebib wc-mode auto-complete smtpmail-multi projectile magit iedit helm exec-path-from-shell evil-visual-mark-mode ess cl-format ace-window)))
+ '(perl-indent-level 2)
+ '(prog-mode-hook (quote (linum-mode whitespace-mode)))
+ '(send-mail-function (quote sendmail-send-it)))
+
+ 
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(default ((t (:background nil))))
+ '(ebib-highlight-face ((t (:inherit helm-selection))))
+ '(mode-line ((t (:background "black" :foreground "gray60" :inverse-video nil :box (:line-width -1 :color "Black") :height 1.25)))))
+(put 'downcase-region 'disabled nil)

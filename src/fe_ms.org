@@ -1,0 +1,1506 @@
+#+TITLE: *Structural similarity networks predict*
+#+TITLE: *clinical outcome in early-phase psychosis*
+* Preamble                                                    :ignore:
+** General comments                                           :ignore:
+# ----------------------------------------------------------------------
+# - Turn on synonyms by starting synosaurus-mode
+# - Look up words using C-c sr
+# - Turn on dictionary by starting flyspell-mode
+# - Count words by section using org-wc-display
+# ----------------------------------------------------------------------
+** Specific comments for this manuscript                       :ignore:
+# ----------------------------------------------------------------------
+# 
+# ----------------------------------------------------------------------
+** org specific settings                                        :ignore:
+# ----------------------------------------------------------------------
+#+OPTIONS: email:nil toc:nil num:nil author:nil date:t tex:t
+#+STARTUP: align fold
+#+SEQ_TODO: TODO(t) | DONE(d)
+#+TAGS: figure(f) check(c) noexport(n) ignore(i)
+#+LANGUAGE: en
+#+EXCLUDE_TAGS: noexport TODO
+#+DATE: {{{time(%Y-%m-%d %H:%M)}}}
+# ----------------------------------------------------------------------
+** Latex header                                                 :ignore:
+# ----------------------------------------------------------------------
+#+LATEX_CLASS:  myarticle
+#+LATEX_HEADER: \usepackage{graphicx}
+#+LATEX_HEADER: \usepackage{textcomp}
+#+LATEX_HEADER: \usepackage[hidelinks]{hyperref}
+#+LATEX_HEADER: \usepackage{setspace}
+#+LATEX_HEADER: \usepackage{amsmath}
+#+LATEX_HEADER: \usepackage{mathtools}
+# LATEX_HEADER: \usepackage{natbib}
+#+LATEX_HEADER: \usepackage{cite}
+#+LATEX_HEADER: \usepackage[labelfont=bf]{caption}
+#+LATEX_HEADER: \usepackage{times}
+# LATEX_HEADER: \renewcommand{\familydefault}{bch}
+#+LATEX_HEADER: \usepackage[T1]{fontenc}
+#+LATEX_HEADER: \graphicspath{{../output/figures/}{../lib/}}
+#+LATEX_HEADER: \topmargin 0.0cm
+#+LATEX_HEADER: \oddsidemargin 0.2cm
+#+LATEX_HEADER: \textwidth 16cm 
+#+LATEX_HEADER: \textheight 21cm
+#+LATEX_HEADER: \footskip 1.0cm
+#+LATEX_HEADER: \DeclarePairedDelimiterX{\infdivx}[2]{(}{)}{% 
+#+LATEX_HEADER:       #1\;\delimsize\|\;#2% 
+#+LATEX_HEADER: } 
+#+LATEX_HEADER: \newcommand{\infdiv}{D_{KL}\infdivx} 
+#+LATEX_HEADER: \DeclarePairedDelimiter{\norm}{\lVert}{\rVert}
+#+LATEX_HEADER: \newcommand\sumin{\sum_{i=1}^{n}}
+#+LATEX_HEADER: \newcommand{\Xoi}[1]{#1(i)}
+#+LATEX_HEADER: \newcommand{\frakPQ}[2]{\frac{\Xoi{#1}}{\Xoi{#2}}}
+#+LATEX_HEADER: \newcommand{\DKLPQ}[3]{D_{\mathrm{KL}}(#1 #3 #2)}
+# LATEX_HEADER: \usepackage{indentfirst}
+# ----------------------------------------------------------------------
+** Authors and affiliations                                     :ignore:
+# ----------------------------------------------------------------------
+#+LATEX_HEADER: \author{
+#+LATEX_HEADER: Philipp Homan$^{1,2,3\ast}$, M.D., Ph.D.,
+#+LATEX_HEADER: Miklos Argyelan$^{1,2,3}$, M.D., M.Sc., \\
+#+LATEX_HEADER: Pamela DeRosse$^{1,2,3}$, Ph.D., 
+#+LATEX_HEADER: Philip Szeszko$^{4}$, Ph.D., \\
+#+LATEX_HEADER: Juan A. Gallego$^{1,2,3}$, M.D.,
+#+LATEX_HEADER: Lauren Hanna$^{1,2,3}$, M.D.,\\
+#+LATEX_HEADER: Delbert Robinson$^{1,2,3}$, M.D.,  
+#+LATEX_HEADER: John M. Kane$^{1,2,3}$, M.D.,\\ 
+#+LATEX_HEADER: Todd Lencz$^{1,2,3}$, Ph.D.,
+#+LATEX_HEADER: Anil K. Malhotra$^{1,2,3}$, M.D.
+#+LATEX_HEADER: \\
+# LATEX_HEADER: \normalsize{$^{1}$Center}\\  
+#+LATEX_HEADER: \normalsize{$^{1}$Center for Psychiatric Neuroscience,}\\
+#+LATEX_HEADER: \normalsize{The Feinstein Institute for Medical Research,}
+#+LATEX_HEADER: \normalsize{Manhasset, NY}\\
+#+LATEX_HEADER: \normalsize{$^{2}$Division of Psychiatry Research,}\\
+#+LATEX_HEADER: \normalsize{The Zucker Hillside Hospital, Northwell}
+#+LATEX_HEADER: \normalsize{Health, New York, NY}\\
+#+LATEX_HEADER: \normalsize{$^{3}$Department of Psychiatry,}\\ 
+#+LATEX_HEADER: \normalsize{The Donald and Barbara Zucker}
+#+LATEX_HEADER: \normalsize{School of Medicine at Northwell/Hofstra,}
+#+LATEX_HEADER: \normalsize{Hempstead, NY}\\
+# LATEX_HEADER: \normalsize{$^{4}$Department of Psychiatry,}\\
+# LATEX_HEADER: \normalsize{Icahn School of Medicine at Mount Sinai, }
+# LATEX_HEADER: \normalsize{New York, NY, USA.}\\
+#+LATEX_HEADER: \normalsize{$^{4}$James J. Peters Veterans Affairs}
+#+LATEX_HEADER: \normalsize{Medical Center, Bronx, New York.}\\
+#+LATEX_HEADER: \\
+#+LATEX_HEADER: \normalsize{$^\ast$Corresponding author. E-mail: } 
+#+LATEX_HEADER: \normalsize{phoman1@northwell.edu.}
+#+LATEX_HEADER: }
+# ----------------------------------------------------------------------
+** Buffer-wide source code blocks                               :ignore:
+# ----------------------------------------------------------------------
+# Set elisp variables need for nice formatting We want no new lines in
+# inline results and a paragraph size of 80 characters Important: this
+# has to be evaluated witch C-c C-c in order to work in the current
+# buffer
+#+BEGIN_SRC emacs-lisp :exports none :results silent
+
+; set timestamp format
+;(setq org-export-date-timestamp-format "%FT%T%z")
+(require 'org-wc)
+(flyspell-mode t)
+;(evil-declare-change-repeat 'company-complete)
+(setq synosaurus-choose-method 'popup)
+(synosaurus-mode t)
+(auto-complete-mode t)
+;(ac-config-default)
+;(add-to-list 'ac-modes 'org-mode)
+(linum-mode t)
+(whitespace-mode t)
+(setq org-babel-inline-result-wrap "%s")
+(setq org-export-with-broken-links "mark")
+(setq fill-column 72)
+(setq whitespace-line-column 72)
+;(setq org-latex-caption-above '(table image))
+(setq org-latex-caption-above nil)
+(org-toggle-link-display)
+; don't remove logfiles at export
+(setq org-latex-remove-logfiles nil)
+
+; Keybindings
+; (global-set-key (kbd "<f7> c") "#+CAPTION: ")
+(defun setfillcolumn72 ()
+	 (interactive)
+   (setq fill-column 72)
+	 )
+
+(defun setfillcolumn42 ()
+	 (interactive)
+   (setq fill-column 42)
+ )
+(define-key org-mode-map (kbd "C-c c #") "#+CAPTION: ")
+(define-key org-mode-map (kbd "C-c l #") "#+LATEX_HEADER: ")
+(define-key org-mode-map (kbd "C-c f c 4 2") 'setfillcolumn42)
+(define-key org-mode-map (kbd "C-c f c 7 2") 'setfillcolumn72)
+
+(setq org-odt-category-map-alist
+    '(("__Figure__" "*Figure*" "value" "Figure" org-odt--enumerable-image-p)))
+
+
+; let ess not ask for starting directory
+(setq ess-ask-for-ess-directory nil)
+
+;(setq org-latex-pdf-process '("latexmk -pdflatex='xelatex
+;-output-directory=../output/tex/ -interaction nonstopmode' -pdf
+;-bibtex -f %f"))
+(setq org-latex-logfiles-extensions 
+    (quote("bcf" "blg" "fdb_latexmk" "fls" 
+    "figlist" "idx" "log" "nav" "out" "ptc" 
+    "run.xml" "snm" "toc" "vrb" "xdv")))
+
+; deactivate link resolving
+(setq org-activate-links nil)
+
+
+#+END_SRC
+#
+#
+#
+# ----------------------------------------------------------------------
+** End preamble                                                 :ignore:
+# ----------------------------------------------------------------------
+# Start with doublespacing 
+
+\doublespacing
+\clearpage
+
+* Abstract
+** Code                                                       :ignore:
+# First, make sure all variables are available
+#+HEADER: :exports none
+#+BEGIN_SRC R :results silent :session
+source("../src/fe_func.R")
+source("../src/fe_load.R")
+
+hca <- hcm
+
+# Load necessary results tables
+roistab  <- read.csv("../output/tables/fe_freesurfer_roinames.csv")
+roitvalstab  <- read.csv("../output/tables/fe_freesurfer_roitvals_dk.csv")
+permuttab <- read.csv("../output/tables/fe_msn_permut_rsq_dk.csv")
+bootstraptab <- read.csv("../output/tables/fe_msn_bootstrap_rsq_dk.csv")
+crossvaltab <- read.csv("../output/tables/fe_msn_crossvalidation_dk.csv")
+crossvaltab_destrieux <- read.csv(
+  "../output/tables/fe_msn_crossvalidation_destrieux.csv")
+graphsumtab <- read.csv(
+  "../output/tables/fe_freesurfer_graphsum_dk.csv")	
+plsrtab <- read.csv("../output/tables/fe_msn_plsscore_rs_dk.csv")	
+deltadegreestab <- read.csv(
+  "../output/tables/fe_freesurfer_deltadegrees_dk.csv")
+
+
+# Custom functions
+pvalstr <- function(pval) {
+	if (pval < 0.001) {
+		return("< 0.001")
+	} else {
+		return(paste("=", round(pval, 3)))
+	}
+}
+
+ # Custom functions
+pvalstr <- function(pval) {
+	if (pval < 0.001) {
+		return("< 0.001")
+	} else {
+		return(paste("=", round(pval, 3)))
+	}
+}
+
+parse_vals <- function(action, param) {
+	switch(action,
+		pval={
+			if (param < 0.001) {
+				 return("< 0.001")
+			} else {
+				 return(paste("=", round(param, 3)))
+			}
+		})
+}
+
+parse_msd <- function(x) {
+	# Fill in pieces of mean and sd 
+
+	print(paste("M = ", round(mean(x, na.rm=TRUE), 2), 
+              ", SD = ", round(sd(x, na.rm=TRUE), 2),  sep=""))
+}
+
+parse_tstat <- function(tstat) {
+	# Fill in pieces of t test as text
+	print(paste("/t/ (", round(tstat$parameter,2), ") = ",
+				round(tstat$statistic, 2), ", /P/ ", parse_vals("pval", 
+				tstat$p.value), sep=""))
+}
+parse_rstat <- function(rstat) {
+	# Fill in pieces of pearson correlation as text
+	print(paste("/r/ (", round(rstat$parameter, 2), ") = ",
+				round(rstat$estimate, 2), ", /P/ ", parse_vals("pval", 
+				rstat$p.value), sep=""))
+}
+parse_r <- function(r, n) {
+	# Fill in pieces of pearson correlation as text
+	t <- r/sqrt((1-r^2)/(n-2))
+	print(paste("/r/ (", n-2, ") = ",
+	round(r, 2), ", /P/ ", parse_vals("pval", 
+				2*pt(t, n, lower=FALSE)), sep=""))
+}
+parse_lm <- function(lm, index=2, scaled=FALSE) {
+	# Fill in pieces of lm as text
+	lsm <- as.data.frame(coef(summary(lm.beta(lm))))[index, ]
+	if (scaled==FALSE) {
+	  beta <- lm.beta::lm.beta(lm)$standardized.coefficients[index]
+  } 
+  else {
+	  beta <- lsm$Estimate
+  }
+
+	def <- summary(lm)$df[2]
+	print(paste("\\beta = ",
+				round(beta, 2), ", /t/ (", round(def, 2), ") = ", 
+				 round(lsm$"t value", 2), ", /P/ ", 
+				parse_vals("pval", lsm$"Pr(>|t|)"), sep=""))
+}
+
+parse_fstat <- function(anovatab, index) {
+	# parse data frame coming from f test
+	a <- as.data.frame(anovatab)[index, ]
+	print(paste("/F/ (", round(a$NumDF, 2), ", ", round(a$DenDF, 2), 
+				") = ", round(a$F.value, 2), ", /P/ ", parse_vals("pval", 
+				a$"Pr(>F)"), sep=""))
+}
+
+parse_chi <- function(chisq, def) {
+	# Fill in pieces of chi square test as text
+	pval <- pchisq(chisq, def, lower=FALSE)
+	print(paste("\\chi^{2} = ",
+				round(chisq, 2), ", df=", def,  
+				", /P/ = ", parse_vals("pval", pval), sep=""))
+}
+
+parse_table <- function(table) {
+	# remove any nil by replacing NA by whitespace
+	table[is.na(table)] <- ""
+	return(table)
+}
+
+parse_rsq <- function(m, ci_lower, ci_upper) {
+  # parse r2 values
+  #perc_m <- round(mean(vec), 2) 
+  #perc_sd <- sd(vec)
+  #perc_se <- perc_sd/sqrt(length(vec))
+  #perc_ci <- perc_se * 1.96 
+	print(paste(round(m, 2) * 100,
+              "% (95% CI: [",
+              round(ci_lower, 2) * 100, "; ",
+              round(ci_upper, 2) * 100, "])", sep=""))
+}
+
+#+END_SRC
+
+#+HEADER: :exports none
+#+BEGIN_SRC R :results silent :session :cache yes
+# Merge data sets and keep only interesting variables
+# Rename variables for later
+#fefa <- fef %>% dplyr::filter(day==0&included16w==1) %>%
+#								dplyr::mutate(study="CIDAR", group="SZ") %>%
+#                dplyr::select(dup, iq, mccb, bprs, bprs_td, bprs_tdbl, 
+#                              age, sex, race, hasmri, study, group, 
+#															education,
+#															bmi, class, alcohol, drugs)
+#															
+#feoa <- feo %>% dplyr::filter(day==0&included16w==1) %>%
+#								dplyr::mutate(study="Omega3", group="SZ") %>%
+#                dplyr::select(dup, iq, mccb, bprs, bprs_td, bprs_tdbl, 
+#                              age, sex, race, hasmri, study, group, 
+#															education,
+#															bmi, class, alcohol, drugs)
+
+
+#hca$male[hca$sex==1] <- 1
+#hca$female[hca$sex==2] <- 1
+hcab <- hca %>% dplyr::rename(age=age) %>%
+        filter(age<50) %>%
+        dplyr::select(sex, age, education, iq) %>%
+				dplyr::mutate(study="HC",
+				       group="HC")
+hcmeanage <- round(mean(hcab$age), 1)
+hcsdage <- round(sd(hcab$age), 1)
+hcmales <- sum(hcab$sex==1, na.rm=TRUE)
+hcfemales <- sum(hcab$sex==2, na.rm=TRUE)
+#feffeo <- rbind(fefa, feoa) %>% filter(hasmri==1)
+
+# Custom function
+parse_agesex <- function() {
+  print(paste("(", n_females, " females; mean age [SD] = ", 
+              meanage, " [", sdage, "]) years", sep=""))
+}
+
+# R version
+rvers <- version$version.string
+
+# Python version
+# pyvers <- system("python --version")
+# pysurfvers <- system("pip freeze | grep pysurf")
+#pyvers <- "2.7.13"
+#pysurfvers <- "0.7"
+pyplusvers <- system("pyv=$(python -V 2>&1); echo $pyv", intern=TRUE)
+pysurfplusvers <- system("pip list | grep pysurf", intern=TRUE)
+			 
+# Custom variables
+n_nodes <- 2 * nlevels(roistab$name) 
+n_nodes_destrieux <- 148
+n_partic <- nrow(feb)
+n_partic_hc <- nrow(hcab)
+n_partic_full_bothsamples <- length(unique(fe_full$grid))
+n_females <- sum(feb$sex==2)
+n_males <- sum(feb$sex==1)
+n_bipolar <- sum(feb$bipolar==1, na.rm=TRUE)
+meanage <- round(mean(feb$age, na.rm=TRUE), 1)
+sdage <- round(sd(feb$age, na.rm=TRUE), 1)
+
+# Cross validation values
+cvkfold_k <- crossvaltab$k
+cvrsq_mean <- crossvaltab$mean
+cvrsq_sd <- crossvaltab$sd
+cvrsq_se <- crossvaltab$sd/sqrt(crossvaltab$niter)
+cvrsq_ci <- cvrsq_se * 1.96
+cvrsq_cl <- cvrsq_mean - cvrsq_ci
+cvrsq_cu <- cvrsq_mean + cvrsq_ci
+
+# values for destrieux atlas
+cvkfold_k_destrieux <- crossvaltab_destrieux$k
+cvrsq_mean_destrieux <- crossvaltab_destrieux$mean
+cvrsq_sd_destrieux <- crossvaltab_destrieux$sd
+cvrsq_se_destrieux <- crossvaltab_destrieux$sd/
+  sqrt(crossvaltab_destrieux$niter)
+cvrsq_ci_destrieux <- cvrsq_se_destrieux * 1.96
+cvrsq_cl_destrieux <- cvrsq_mean_destrieux - cvrsq_ci_destrieux 
+cvrsq_cu_destrieux <- cvrsq_mean_destrieux + cvrsq_ci_destrieux
+
+
+
+# Permutation and bootstrap values
+rsqorig <- unique(permuttab$rsq_orig)
+npermut <- unique(permuttab$niter)
+prsq_pval <- unique(permuttab$prsq_pva)
+
+# PLS correlation values
+pls1r <- plsrtab$r[plsrtab$component=="PLS1"]
+pls1rpval <- plsrtab$pval[plsrtab$component=="PLS1"]
+pls2r <- plsrtab$r[plsrtab$component=="PLS2"]
+pls2rpval <- plsrtab$pval[plsrtab$component=="PLS2"]
+
+# Graph summary, drop Cp and keep transitivity
+# as the two are essential equal
+graphsumtab <- graphsumtab %>% filter(metric!="Cp") %>%
+   mutate(metric=recode(metric, 
+          transitivity="Cluster coef.",
+	        diameter="Diameter",
+					E.global="Global efficiency",
+					E.local="Local efficiency",
+					num.hubs="Number of hubs",
+					richclub="Rich club coef.",
+					vulnerability="Vulnerability"))
+
+#+END_SRC
+
+** Text                                                         :ignore:
+Despite recent advances, there is still a major need for prediction of
+treatment success in schizophrenia, a condition long considered a
+disorder of dysconnectivity in the brain. Graph theory provides a means
+to characterize the connectivity in both healthy and abnormal brains. We
+calculated structural similarity networks in each participant and
+hypothesized that the "hubness", i.e., the number of edges connecting a
+node to the rest of the network, would be associated with clinical
+outcome. This prospective controlled study took place at an academic
+research center and included src_R[:session]{n_partic} {{{results(82)}}}
+early-phase psychosis patients src_R[:session]{parse_agesex()}
+{{{results((23 females; mean age [SD] = 21.6 [5.5]) years)}}} and
+src_R[:session]{n_partic_hc} {{{results(58)}}} healthy
+controls. Medications were administered in a double-blind randomized
+manner, and patients were scanned at baseline prior to treatment with
+second-generation antipsychotics. Symptoms were assessed with the Brief
+Psychiatric Rating Scale at baseline and over the course of 12
+weeks. Nodal degree of structural similarity networks was computed for
+each subject and entered as a predictor of individual treatment response
+into a partial least squares (PLS) regression. The model fit was
+significant in a permutation test with src_R[:session]{npermut}
+{{{results(1000)}}} permutations (/P/ = src_R[:session]{prsq_pval}
+{{{results(0.006)}}}), and the first two PLS regression components
+explained src_R[:session]{parse_rsq(cvrsq_mean, cvrsq_cl, cvrsq_cu)}
+{{{results(29 (95% CI: [27; 30]))}}} of the variance in treatment
+response after cross-validation. Nodes loading strongly on the first PLS
+component were primarily located in the orbito- and prefrontal cortex,
+whereas nodes loading strongly on the second PLS component were
+primarily located in the superior temporal, precentral, and middle
+cingulate cortex. These data suggest a link between brain
+network morphology and clinical outcome in early-phase psychosis.
+
+*Keywords*: psychosis; treatment response; cortical thickness; graph
+theory; Kullback-Leibler divergence; Empirical Bayes
+	
+\clearpage
+
+* Introduction                                                  
+** Text                                                         :ignore:
+Finding predictors of response to antipsychotic drug treatment is of
+critical importance to improving outcomes for psychotic
+disorders.[[cite:Stephan2016a,Dazzan2015]] A priori identification of
+patients who are not likely to respond to a specific treatment strategy
+could reduce the number and length of ineffective treatment
+trials. Moreover, understanding the biological underpinnings of
+effective treatments may lead to the detection of malleable central
+nervous system targets for the development of new treatment strategies -
+a current imperative because of the long-standing dearth of novel
+antipsychotic treatments.
+
+While parallel group trials cannot determine treatment response for
+individual patients in a definite manner, we have previously applied
+rigorous a priori criteria to distinguish likely responders from
+non-responders [[cite:Robinson2015,Trampush2015]] and have shown that
+functional striatal connectivity was higher in non-responders compared
+to responders [[cite:Sarpal2016]] and normalized with antipsychotic
+treatment.[[cite:Sarpal2015]]
+
+The fact that we found that brain connectivity was related to treatment
+outcome is not surprising. Schizophrenia has long been considered a
+disorder involving dysconnectivity in the human
+brain,[[cite:Bullmore2013,Friston2016]] and graph theory has provided
+means to characterize the connectivity in the healthy and abnormal human
+brain.[[cite:Bullmore2009]] Briefly, graph theory describes brain
+networks abstractly as a set of nodes and edges, and quantifies their
+patterns of connectivity.[[cite:Bullmore2013]] While normal brain graphs
+have typical properties (i.e., they are more organized than random
+graphs), brain graphs of schizophrenia patients may have specific
+abnormalities.
+
+For example, highly connected nodes in the brain that are also densely
+connected with one another, so called rich clubs, are present in
+schizophrenia but less prominent compared to healthy
+controls.[[cite:Heuvel2013]] Other structural imaging studies using
+graph theory found evidence for less information integration and more
+clustering of nodes across brain
+regions.[[cite:Heuvel2010,Heuvel2013,Zhang2012]] Similar findings have
+emerged in other structural studies,[[cite:Bassett2008,Collin2013]] but
+studies based on functional connectivity have not always converged with
+these structural
+findings,[[cite:Lynall2010,Alexander-Bloch2010,Evans2013]] and only a
+minority of studies have demonstrated relevance of these graph metrics
+for clinical outcome.
+
+While two prior studies[[cite:Palaniyappan2016,Hadley2016]] computed
+group-wise graph metrics in responders and non-responders, we here
+tested how individual network architecture relates to individual
+clinical outcome. Previous work has shown that this can be achieved by
+comparing, in each individual, the statistical similarity between brain
+regions [[cite:Kong2014,Kong2015,Wang2016]] or by assessing their
+correlations across different imaging domains.[[cite:Seidlitz2018]]
+Statistical similarity between brain regions can then be used to build
+similarity matrices across the whole brain for each individual from
+which a binary graph of nodes and edges can be constructed. This gives a
+similarity network (or connectome) for each participant, which can then
+serve as a predictor for individual treatment outcome. This was the
+approach we used in the current study (Fig. [[figflowchart]]). Based on
+ample evidence that schizophrenia brain abnormalities are primarily
+located in highly connected nodes in the human
+connectome,[[cite:Crossley2014]] we focused our analysis on the hubness
+(or nodal degree) graph metric which can be computed from the similarity
+networks. We hypothesized that the hubness of cortical nodes would be
+associated with individual treatment outcome in two concatenated early
+psychosis cohorts. Treatment outcome of positive symptoms was computed
+using mixed
+models.[[cite:Chen2006,Senn2009a,Adkins2010,Senn2016,Hecksteden2018]]
+
+\clearpage
+
+* Materials and Methods
+** Participants
+We used two early-phase psychosis cohorts from two separate 12-week
+clinical trials on second-generation antipsychotics with a similar
+design and similar treatment effects (Fig. [[figaveragetx]]). Details
+have been published previously[[cite:Sarpal2017]] and are summarized in
+Table [[tabsample]] as well as in the Supplementary Information. Written
+informed consent was obtained from adult participants and the legal
+guardians of participants younger than 18 years. All participants under
+the age of 18 provided written informed assent. The study was approved
+by the Institutional Review Board (IRB) of Northwell Health, which
+served as the central IRB for all clinical sites. We also included a
+sample of src_R[:session]{n_partic_hc} {{{results(58)}}} healthy
+controls (Table [[tabsample]]).
+
+Patients had a current DSM-IV-defined diagnosis of schizophrenia,
+schizophreniform, schizoaffective disorder, or psychotic disorder not
+otherwise specified, and bipolar disorder with psychotic features and
+could have had up to 2 years of antipsychotic treatment. Many but not
+all subjects were first episode patients. Note that excluding the
+patients with a diagnosis of bipolar disorder with psychotic features
+(/N/ = src_R[:session]{n_bipolar} {{{results(3)}}}) did not alter the
+results
+
+Symptom assessments using the BRPS-A were done at baseline, weekly for 4
+weeks, every 2 weeks until week 12. To obtain a measure of positive
+symptoms, we defined thought disturbance [[cite:Robinson2015]] as the
+sum of the following items: conceptual disorganization, grandiosity,
+hallucinatory behavior, and unusual thought content. 
+
+** Structural magnetic resonance imaging and analysis
+Magnetic resonance imaging exams were conducted on a 3-T scanner (GE
+Signa HDx). All participants were measured on the same scanner. We
+acquired anatomical scans in the coronal plane using an
+inversion-recovery prepared 3D fast spoiled gradient (IR-FSPGR) sequence
+(TR = 7.5 ms, TE = 3 ms, TI = 650 ms matrix = 256 $\times$ 256, FOV =
+240 mm) which produced 216 contiguous images (slice thickness = 1 mm)
+through the whole brain. Image processing and segmentation were
+conducted with the Freesurfer 5.1.0 recon-all pipeline and the
+Desikan-Killiany cortical atlas [[cite:Desikan2006]]. All image
+processing, parcellation, and quality control procedures were conducted
+while blinded to participants' demographic and clinical
+characteristics. Visual inspections for quality assurance were conducted
+and no manual interventions were necessary. Details on the processing
+pipeline can be found in the Supplementary Information.
+
+** Individual treatment response estimation
+Rather than categorizing participants to responders and non-responders
+which is statistically inefficient,[[cite: Senn2016]] we focused on
+treatment response as a continuous measure and used mixed models to make
+efficient use of the full sample and the repeated
+measures.[[cite:Chen2006,Hedeker2006,Norman2008,Hecksteden2018]]
+
+Individual response was estimated using mixed models with Restricted
+Maximum Likelihood (REML) and used as outcome measure in subsequent
+analyses. With mixed models, individual responses are estimated to be
+closer to the average treatment response, an effect that is well-known
+as partial pooling or shrinkage.[[cite:Gelman2013]] The partial pooling
+effect for the two psychosis cohorts can be visualized by showing how
+individual treatment effects are pulled toward the average treatment
+effect (Fig. [[figshrinkage]]). Partial pooling makes the analysis less
+susceptible to individual outliers by attenuating the impact of
+participants with only few assessments (Fig. [[figshrinkage]]), which is
+of particular importance in estimating treatment response in relatively
+small samples. A more detailed description can be found in the
+Supplementary Information.
+
+** Graph theoretic analysis
+Individual network graphs were computed following a new method that
+estimates statistical similarity across brain regions in each individual
+participant.[[cite:Kong2014,Kong2015]] The analysis flowchart is shown
+in Figure [[figflowchart]]. After cortical parcellation into
+src_R[:session]{n_nodes} brain regions through the Freesurfer
+recon-all pipeline, statistical similarity between all pair-wise brain
+regions was computed in each individual. First, probability density
+functions were estimated for the cortical thickness distribution in each
+region, using a Gaussian kernel and 512 sampling points. This resulted
+in probability distributions for each of the src_R[:session]{n_nodes}
+{{{results(68)}}} brain regions. Statistical similarity between each
+possible pair of distributions was then computed by calculating the
+Kullback-Leibler (KL) divergence between
+them.[[cite:Kong2014,Kong2015,Wang2016]] The KL divergence measures the
+difference between two probability distributions (i.e., the loss of
+information when one distribution is used to approximate another). The
+KL divergence is thus defined as
+
+\begin{align} 
+\label{eq:KL} 
+\DKLPQ{P}{Q}{\|} = \sumin \Xoi{P} \log \frakPQ{P}{Q}
+\end{align} 
+
+with $P$ and $Q$ being two probability distribution functions and $n$
+the number of sample points. Since $\DKLPQ{P}{Q}{\|}$ is not equal to
+$\DKLPQ{Q}{P}{\|}$, a symmetric variation of the KL divergence can be
+derived as follows:
+
+\begin{align} 
+\label{eq:KL2} 
+\DKLPQ{P}{Q}{,} = \sumin \Big(\Xoi{P} \log \frakPQ{P}{Q} + \Xoi{Q} \log \frakPQ{Q}{P} \Big).
+\end{align} 
+
+Finally, the following transformation was used to limit the measure to a
+range from 0 and 1:
+
+\begin{align} 
+\label{eq:KLS} 
+\mathrm{KLS}(P, Q) = \mathrm{e}^{-\DKLPQ{P}{Q}{,}}.
+\end{align} 
+
+We thus computed the KLS values for all possible pairs of brain regions
+in each individual participant, resulting in a src_R[:session]{n_nodes}
+\times src_R[:session]{n_nodes} similarity matrix $S_{ij}$ for each
+subject (Fig. [[figflowchart]]). Individual similarity matrices were
+then binarized by employing a sparsity threshold $\tau$ (number of
+actual edges divided by the maximum possible number of edges in a
+network), resulting in a binary adjacency matrix
+$A_{ij}$:[[cite:Wang2016]]
+
+\begin{align}
+A_{ij} = [a_{ij}] = 
+\begin{cases}
+1, \text{if } {s}_{ij} > \mathrm{KLS_{th}}; \\
+0, \text{otherwise},  
+\end{cases}
+\end{align}
+
+with $\mathrm{KLS_{th}}$ being a subject-specific KLS threshold that
+ensured that all networks had the same number of nodes and edges across
+participants. Following previous work, we chose a sparsity threshold of
+$\tau = 0.1$ for our analysis but also repeated calculations for a range
+of thresholds (0.1 - 0.7, with intervals of 0.05). The binary matrices
+allowed us to construct graphs of nodes and edges.
+
+The graph theoretic measure of primary interest was nodal degree or
+hubness. The degree, $k(i)$, of a node is the number of edges connecting
+the $i\text{th}$ region to the rest of the network: 
+
+\begin{align}
+k(i) = \sumin A_{ij},
+\end{align}
+
+where $A_{ij}$ is the binary adjacency matrix which was computed by
+thresholding the similarity matrix, $S_{ij}$. 
+
+** Statistical analyses
+We used multivariate partial least squares (PLS) regression to test the
+relationship between nodal degree and individual treatment
+response. This method is particularly suited for a set of highly
+correlated predictors. In PLS, the optimal low-dimensional solution for
+a relationship between a set of correlated predictor variables and a
+response variable is computed. The src_R[:session]{n_partic} \times
+src_R[:session]{n_nodes} predictor variable matrix comprised estimates
+of degree (calculated at 10% connection density) for each of
+src_R[:session]{n_nodes} {{{results(68)}}} nodes in each of
+src_R[:session]{n_partic} {{{results(82)}}} participants.
+
+The (src_R[:session]{n_partic} {{{results(82)}}} \times 1) response
+vector comprised individual treatment response slopes. To account for
+unspecific inter-individual difference, the predictor matrix and the
+response vector were regressed on potential confounds, including study
+cohort (CIDAR, OMEGA3), baseline value of thinking disturbance,
+intracranial volume, age, gender, and age x gender
+interaction. Residuals of this regression were then used in the actual
+PLS analysis.
+
+To rank each cerebral node according to its correlation with each PLS
+component, we used bootstrapping, i.e., src_R[:session]{npermut}
+{{{results(1000)}}} drawing samples with replacement of the
+src_R[:session]{n_partic} {{{results(82)}}} individual participants, to
+compute the error on the PLS weights. A similar procedure has been used
+in recent graph theoretic
+work.[[cite:Vertes2016,Whitaker2016,Seidlitz2018]]
+
+All analyses were conducted with the R software src_R[:session]{rvers}
+{{{results(R version 3.3.2 (2016-10-31))}}}.[[cite:R-Core-Team2016]]
+Mixed models were estimated using the lme4 library,[[cite:Bates2015]]
+partial least squares regression were computed with the pls
+library,[[cite: Mevik2016]] and brain graph metrics with the
+brainGraph[[cite:Watson2018]] and igraph[[cite:Csardi2006]] libraries.
+src_R[:session]{pyplusvers} {{{results(Python 2.7.13)}}} and
+src_R[:session]{pysurfplusvers} {{{results(pysurfer (0.7))}}} were used
+for visualizing the imaging results.
+
+** Data and code availability
+The data and code supporting the findings of this study are available
+online at http://github.com/philipphoman/ssn. To ensure reproducibility
+we included a Makefile which reflects the dependencies between different
+analysis modules and allows to run the analysis using the 'make' command
+from the Unix command line.
+
+\clearpage
+
+* Results
+** Nodal degree predicts treatment response  
+*** Text                                                        :ignore:
+The first two partial least squares (PLS) regression components
+explained src_R[:session]{parse_rsq(cvrsq_mean, cvrsq_cl, cvrsq_cu)}
+{{{results(29 (95% CI: [27; 30]))}}} of the variance in treatment
+response after cross-validation, with src_R[:session]{npermut}
+{{{results(1000)}}} sets of src_R[:session]{cvkfold_k} participants held
+out from the sample. This model fit was significant in a permutation
+test with src_R[:session]{npermut} {{{results(1000)}}} permutations (/P/
+= src_R[:session]{prsq_pval} {{{results(0.003)}}}).  Notably,
+statistical significance (/P/ < 0.05) was maintained when repeating the
+PLS regression across connection densities (0.1 - 0.7). ) The PLS
+components were positively correlated with treatment response slopes
+(Fig. [[figplsbrains]]), and to assess their contribution, we ranked the
+src_R[:session]{n_nodes} {{{results(68)}}} nodes of the individual
+networks according to their bootstrap standardized weight on each PLS
+component.[[cite: Vertes2016,Whitaker2016,Seidlitz2018]] Most
+importantly, since the sign of the correlation between PLS components
+and treatment response slopes was positive (Fig. [[figplsbrains]]),
+nodes that correlated strongly with PLS scores had a negative
+relationship with treatment response. We found that they were primarily
+located in the orbito- and prefrontal cortices and posterior cingulate
+cortex for the first PLS component and in the superior temporal,
+precentral, and middle cingulate brain areas for the second PLS
+component (Fig. [[figplsbrains]]).
+
+In summary, these findings suggest that individual differences in the
+configuration of structural similarity networks explain a significant
+proportion of variance in treatment response.
+
+We then also tested for group differences in nodal degree between
+psychosis patients and a cohort of healthy controls. Using
+permutation tests with src_R[:session]{npermut} permutations for each of
+the src_R[:session]{n_nodes} {{{results(68)}}} nodes, we found a
+significant increase in nodal degree the left orbitofrontal cortex
+(/P/ < 0.05; Fig. [[figdeltadegreesbrain]]). 
+
+** Validation of results
+*** Text                                                      :ignore:
+To verify that our findings held up when using a different cortical
+parcellation scheme, we repeated the analysis using the Destrieux atlas
+[[cite:Destrieux2010]] which comprises
+src_R[:session]{n_nodes_destrieux} {{{results(148)}}} nodes. We again
+found that the first two PLS components explained
+src_R[:session]{parse_rsq(cvrsq_mean_destrieux, cvrsq_cl_destrieux,
+cvrsq_cu_destrieux)} {{{results(30 (95% CI: [28; 31]))}}} of the
+variance in treatment response after cross-validation. In addition,
+excluding the patients with a diagnosis of bipolar disorder with
+psychotic features (/N/ = src_R[:session]{n_bipolar}) did not alter the
+results.
+
+** Group differences in cortical thickness 
+*** Text                                                        :ignore:
+For completeness, we also assessed how the psychosis cohorts differed
+from the control cohort in terms of cortical thickness in all
+src_R[:session]{n_nodes} {{{results(68)}}} cortical nodes. Cortical
+thickness was reduced in patients compared to controls most prominently
+in the left paracentral and parahippocampal gyrus and increased in the
+right rostral anterior cingulate cortex
+(Fig. [[figtvalsbrain]]). However, these alterations did not survive
+correction for multiple comparisons using false discovery rate (FDR /q/
+< 0.05).
+
+\clearpage
+
+* Discussion                                                  
+Here we showed that individual differences in structural similarity
+networks predicted treatment response in early-phase psychosis. The
+importance of this finding is two-fold. First, we used the continuous
+scale to define treatment response, thereby increasing statistical
+sensitivity and avoiding power loss through
+dichotomization.[[cite:Senn2016]] Second, and related, we computed
+networks for each participant which allowed us to predict treatment
+response on the individual level.
+
+We focused our analysis on a specific graph theoretic parameter, namely
+nodal degree or hubness. The rationale for this decision was that brain
+networks contain only a minority of highly connected nodes acting as
+hubs. Hubs are considered to be functionally valuable by supporting
+information integration [[cite:Crossley2014]] but their value comes at a
+high biological cost due to increased metabolic demand and long-distance
+connections. Their prominent role suggests that schizophrenia-relevant
+brain abnormalities should be concentrated in hubs, a prediction that
+was indeed supported by a large body of meta-analytic
+evidence,[[cite:Crossley2014]] where schizophrenia lesions were found
+most dominantly in frontal and temporal cortical hubs. In line with this
+notion, we found that nodal degree in orbito- and prefrontal areas
+contributed most strongly to the prediction of treatment response, with
+additional contributions from superior temporal regions. Importantly,
+nodes in the right orbitofrontal cortex have been found to show reduced
+degree compared to controls in functional networks in
+schizophrenia.[[cite:Lynall2010]] Thus, orbitofrontal and prefrontal
+nodes appear to impact clinical outcome in early-phase psychosis.
+
+While previous studies indicated the usefulness of brain morphology and
+machine learning in predicting response to treatment,
+[[cite:Hasan2016,Koutsouleris2018]] only one study has investigated the
+relationship between anatomical networks and clinical
+outcome.[[cite:Palaniyappan2015]] That study used structural covariance
+of cortical folding to predict treatment response in first episode
+psychosis, and found higher segregation, poorer integration and
+vulnerable gyrification covariance in non-responders. Specifically,
+non-responders showed reduced centrality of the left insula and anterior
+cingulate cortex. In addition, they were also more vulnerable to
+simulated lesions, i.e., covariance disintegrated after removal of high
+degree hubs, supporting the relevance of nodal degree for treatment
+response.[[cite: Palaniyappan2015]] A comparable study that used resting
+state functional connectivity found reduced global efficiency and
+increased clustering in patients with schizophrenia that normalized with
+response to antipsychotic treatment.[[cite:Hadley2016]] What is the
+biological interpretation of structural similarity networks?  It has
+been hypothesized that brain regions that grow together should display
+strong structural covariance across
+individuals.[[cite:Zielinski2010,Palaniyappan2015]] In line with this
+hypothesis, previous work has shown that structural networks of regions
+that grow together shared similar global and nodal topological
+properties.[[cite: Alexander-Bloch2013]] Thus, a likely interpretation
+is that structural similarity networks reflect "synchronized
+developmental change in distributed cortical
+regions."[[cite:Alexander-Bloch2013]] Speculatively, then, it is the
+process of maturation that may impact distributed and treatment-relevant
+brain areas.
+
+An important difference between our study and previous attempts to
+characterize individual treatment response is that we did not
+dichotomize our sample into responders and non-responders. Although such
+dichotomization may be appealing and particularly relevant to
+clinicians, it is statistically inefficient to binarize a continuous
+measure.[[cite:Senn2003,Senn2016,Harrell2015]] The argument that binary
+decisions are what clinicians ultimately need to make, and therefore
+research should provide them with binary classifications, can easily be
+refuted. Indeed, if a binary decision must be made, it must be made at
+the point of actual clinical care, when all costs and potential benefits
+are known.[[cite:Harrell2015]] For example, the clinician may decide
+that a probable non-responder may still undergo treatment if the
+potential benefit outweighs the risk for that particular
+case. Furthermore, it is generally under-appreciated that it is often
+difficult to determine whether or not an individual patient responded to
+the treatment. The reason for this is that one does not know how the
+patient would have done under placebo. This is often overlooked and can
+limit attempts at classifying patients based on observed response. Thus,
+treatment response prediction based on a single-criterion classification
+in responders and non-responders should be treated with caution.
+
+The mixed model approach employed in this study is one way to address
+this problem; it separates random variation from actual treatment
+variation in each participant.[[cite:Senn2016, Hecksteden2018]] In
+addition, individual treatment response is estimated more efficiently by
+utilizing the full data set and more conservatively by applying
+shrinkage.[[cite:Hedeker2006,Gelman2013]]
+
+A few limitations merit comment. First, we did not include a placebo
+control group, which would have allowed us to compare the overall
+variability in response between the treatment and the control groups. In
+principle, such a comparison would need to show that the variability in
+the treatment arm is higher than the one in the placebo arm, and that
+the difference is clinically relevant.[[cite:Cortes2018]] However,
+placebo-controlled trials in early-phase psychosis have rarely been
+conducted. In addition, since the neurobiological underpinnings of graph
+metrics are still unknown, pathophysiological inferences must be made
+with caution. Finally, graph metrics may also vary depending on the
+parcellation scheme. However, in this study we repeated our analysis
+with an additional atlas of src_R[:session]{n_nodes_destrieux} nodes and
+found essentially the same results.
+
+In conclusion, this study showed that advanced statistical modeling of
+treatment response and a relatively novel[[cite:Kong2014]] computation
+of structural similarity networks established a potential link between
+brain network morphology and clinical outcome in early-phase
+psychosis.
+
+\clearpage
+* Acknowledgments                                              
+Presented first at the European Conference of Schizophrenia Research
+2017, Berlin, Germany. Supported by NIMH grant P50MH080173 to
+Dr. Malhotra, grant P30MH090590 to Dr. Kane, grant R01MH060004 to
+Dr. Robinson, grant R01MH076995 to Dr. Szeszko and R21MH101746 to
+Drs. Robinson and Szeszko. The funding agency had no role in the design
+and conduct of the study; collection, management, analysis, and
+interpretation of the data; preparation, review, or approval of the
+manuscript; and decision to submit the manuscript for
+publication. Dr. Homan had full access to all the data in the study and
+takes responsibility for the integrity of the data and the accuracy of
+the data analysis. The authors acknowledge their patients, their
+patients' families, and their psychiatry research support staff. They
+thank Robert Gibbons, Ph.D., and Stephen Senn, Ph.D., for feedback
+regarding the statistical approaches used in this study.
+
+\clearpage
+
+* Conflict of Interest
+Dr. Robinson has served as a consultant for Asubio, Otsuka, and Shire
+and has received grants from Bristol-Myers Squibb, Janssen, and
+Otsuka. Dr. Kane has served as a consultant for Alkermes, Eli Lilly,
+Forest, Forum, Genentech, Intracellular Therapies, Janssen, Johnson &
+Johnson, Lundbeck, Otsuka, Reviva, Roche, Sunovion, and Teva; he has
+received honoraria for lectures from Genentech, Janssen, Lundbeck, and
+Otsuka; and he is a shareholder in MedAvante and Vanguard Research
+Group. Dr. Lencz is a consultant for Genomind. Dr. Malhotra has served
+as a consultant for Forum Pharmaceuticals and has served on a scientific
+advisory board for Genomind. The other authors report no financial
+relationships with commercial interests.
+
+\clearpage
+
+* References                                                  :ignore:
+ \bibliographystyle{molpsychiatry}
+ \bibliography{master}
+ \clearpage
+
+* Tables and Figures
+# Start with back to single spacing 
+\singlespacing
+
+** Table. Sample                                              :ignore:
+*** Code                                             :noexport:ignore:
+#+NAME: srctabsample
+#+HEADER: :exports results 
+#+BEGIN_SRC R :results value :colnames yes :session  :cache no 
+
+#lev <- c("Female", "Male", "Age", "BPRS", "DUP", "IQ", "MCCB")
+df_sum_stats <- function(df) { 
+  dfm <- df %>% gather(key=Characteristic, value=Value) %>%
+					group_by(Characteristic) %>%
+					dplyr::summarize(N=sum(!is.na(Value)),
+					                 Mean=mean(Value, na.rm=TRUE),
+													 SD=sd(Value, na.rm=TRUE))
+					#mutate(Characteristic=factor(Characteristic, levels=lev)) %>%
+					#arrange(Characteristic)
+  #dfm[, 3:5] <- round(dfm[, 3:5], 1)
+}
+
+
+
+# Summarize SZ
+febm <- df_sum_stats(feb %>% dplyr::select(age, bprs, bprs_td, 
+                                                dup, iq, education)) 
+
+# Summarize HC																							
+hcm$bprs <- NA
+hcm$bprs_td <- NA
+hcm$dup <- NA
+hcam <- df_sum_stats(hcm %>% dplyr::select(age, iq, education,
+                                            bprs, bprs_td, dup))
+
+maleshc <- data.frame(Characteristic="male", N=sum(hcm$sex==1),
+                    Mean=NA, SD=NA)
+femaleshc <- data.frame(Characteristic="female", N=sum(hcm$sex==2),
+                    Mean=NA, SD=NA)
+
+males <- data.frame(Characteristic="male", N=sum(feb$sex==1),
+                    Mean=NA, SD=NA)
+females <- data.frame(Characteristic="female", N=sum(feb$sex==2),
+                    Mean=NA, SD=NA)
+
+febm[, 3:4] <- round(febm[, 3:4], 1)
+hcam[, 3:4] <- round(hcam[, 3:4], 1)
+hcam <- rbind(maleshc, femaleshc, hcam)
+hcam$Mean[4:6] <- NA
+hcam$SD[4:6] <- NA
+febm <- rbind(males, females, febm)
+
+
+dxn <- data.frame(schiz=sum(feb$schizophrenia, na.rm=TRUE),
+                 schizophreniform=sum(feb$schizophreniform, na.rm=TRUE),
+                 psychotic=sum(feb$psychotic_nos, na.rm=TRUE),
+                 schizoaff=sum(feb$schizoaffective, na.rm=TRUE),
+                 bipolar=sum(feb$bipolar, na.rm=TRUE),
+                 mednaive=sum(feb$mednaive=="yes", na.rm=TRUE),
+                 med2weeks=sum(feb$priordrugdays<=14, na.rm=TRUE),
+                 medprior=sum(!is.na(feb$priordrugdays)))
+								 
+
+dxm <- data.frame(medpriorm=round(mean(feb$priordrugdays, na.rm=TRUE), 1),
+                  medpriorsd=round(sd(feb$priordrugdays, na.rm=TRUE), 1))
+
+									
+dx <- dxn %>% gather(key=Characteristic, value=N, 
+                     schiz,
+                     schizophreniform,
+                     psychotic,
+                     schizoaff,
+                     bipolar,
+                     mednaive,
+                     med2weeks,
+                     medprior) %>%
+  mutate(Mean=NA, SD=NA)
+
+dx$Mean[dx$Characteristic=="medprior"] <- dxm$medpriorm
+dx$SD[dx$Characteristic=="medprior"] <- dxm$medpriorsd
+
+febm <- rbind(febm, dx)
+
+# apply sorting on characteristics
+ch_of_interest <- c("male", "female", "age", "schiz",
+                    "schizophreniform",
+                    "psychotic",
+                    "schizoaff", "bipolar",
+                    "medprior",
+                    "mednaive",
+                    "med2weeks",
+                    "education", "iq", "bprs", "bprs_td", "dup")
+
+
+# cbind sz and hc
+hcmm <- rbind(hcam, dx %>% mutate(N=NA, Mean=NA, SD=NA))
+cc <- cbind(febm[, 1:4], hcmm[, 2:4])
+
+# Rename columns so that sorting with arrange() works 
+colnames(cc) <- c("Characteristic", "N", "Mean", "SD", "N2", "M2", "SD2") 
+cc$Characteristic <- factor(cc$Characteristic, levels=ch_of_interest)
+cc <- cc %>% arrange(Characteristic)
+
+ch <- c("Males", "Females", "Age, years", "Schizophrenia",
+        "Schizophreniform disorder", "Psychotic disorder NOS",
+        "Schizoaffective disorder", 
+        "Bipolar I disorder (with psychotic features)",
+        "Prior medication exposure",
+        "Medication naive", "Medication 2 weeks or less",
+        "Education, years", "IQ",
+        "BPRS total", "BPRS TD", "DUP, weeks")
+
+colnames(cc) <- c("*Characteristic*", "*PSY*", "*Mean*", "*SD*", 
+                       "*HC*", "*Mean*", "*SD*")
+cc$"*Characteristic*" <- ch
+cc <- parse_table(cc)
+return(cc)
+#+END_SRC
+
+*** Text                                                      :ignore:
+#+CAPTION: *Sample characteristics*.
+#+CAPTION: /Abbreviations/: 
+#+CAPTION: PSY, patients with early psychosis;
+#+CAPTION: HC, healthy controls;
+#+CAPTION: BPRS, Brief Psychiatric Rating Scale;
+#+CAPTION: BPRS TD, Brief Psychiatric Rating Scale Thinking Disturbance;
+#+CAPTION: DUP, Duration of untreated psychosis.
+#+ATTR_LATEX: :align lrrrrrrrrrr
+#+NAME: tabsample
+#+RESULTS[c85aff202260660b603ed9e9b7616a4d0e04fd6b]: srctabsample
+| *Characteristic* | *SSD* | *Mean* |  *SD* | *HC* | *Mean* | *SD* |
+|------------------+-------+--------+-------+------+--------+------|
+| Males            |    59 |        |       |   25 |        |      |
+| Females          |    23 |        |       |   33 |        |      |
+| Age, years       |    82 |   21.6 |   5.5 |   58 |   28.1 | 11.9 |
+| BPRS total       |    82 |   42.7 |   7.5 |    0 |        |      |
+| BPRS TD          |    82 |   14.3 |   3.1 |    0 |        |      |
+| DUP, weeks       |    77 |  110.9 | 176.2 |    0 |        |      |
+| Education, years |    77 |   12.2 |   2.2 |   58 |   13.7 |  2.9 |
+| Estimated IQ     |    69 |   97.9 |  13.2 |   49 |  102.2 |   10 |
+
+\clearpage
+
+** Figure Analysis overview                                   :ignore:
+#+NAME: cropfigflowchart
+#+BEGIN_SRC sh :exports results :results silent
+#  if [ ! -f ../lib/fe_freesurfer_flowchart-crop.pdf]; then 
+#    pdfcrop ../lib/fe_freesurfer_flowchart.pdf
+#	fi
+#+END_SRC
+#+NAME: figflowchart
+#+CAPTION: *Analysis flow chart. Computation of*
+#+CAPTION: *similarity networks in each participant*
+#+CAPTION: *by calculating the statistical similarity between*
+#+CAPTION: *brain regions.*
+#+CAPTION: First, Freesurfer cortical parcellation was
+#+CAPTION: conducted for each individual participant. 
+#+CAPTION: Cortical thickness was
+#+CAPTION: extracted for each vertex within each
+#+CAPTION: region and used to estimate the
+#+CAPTION: probability distribution function. The
+#+CAPTION: similarity between any pair of region was
+#+CAPTION: then estimated by calculating the
+#+CAPTION: Kullback-Leibler (KL) divergence of their
+#+CAPTION: probability distributions, resulting in 
+#+CAPTION: a src_R[:session]{n_nodes} {{{results(68)}}} 
+#+CAPTION: x src_R[:session]{n_nodes} {{{results(68)}}} 
+#+CAPTION: similarity matrix. 
+#+CAPTION: The KL divergence computes the loss of
+#+CAPTION: information when one distribution is used 
+#+CAPTION: to approximate another. The similarity matrix 
+#+CAPTION: was then thresholded into a binary matrix to 
+#+CAPTION: create a network graph. Graph-based 
+#+CAPTION: degree (or hubness) for each node was then
+#+CAPTION: calculated for each individual participant. 
+#+CAPTION: Nodal degrees were then entered as
+#+CAPTION: predictors into a partial
+#+CAPTION: least squares regression, using individual
+#+CAPTION: treatment response slopes as outcome
+#+CAPTION: measure. KL, Kullback-Leibler divergence;
+#+CAPTION: PLS, partial least squares regression;
+#+CAPTION: RMSEP, root mean square error of prediction.
+#+ATTR_LATEX: :width 1.0\textwidth 
+[[file:fe_freesurfer_flowchart.pdf]]
+
+\clearpage
+
+** Figure Shrinkage                                           :ignore:
+#+NAME: cropfigshrinkage
+#+BEGIN_SRC sh :exports results :results silent
+#  if [ ! -f ../lib/fe_freesurfer_shrinkage-crop.pdf]; then 
+#    pdfcrop ../lib/fe_freesurfer_shrinkage.pdf
+#  fi
+#+END_SRC
+#+NAME: figshrinkage
+#+CAPTION: *Partial pooling to regularize individual response slopes.* 
+#+CAPTION: *A.* *Individual time courses for all participants*
+#+CAPTION: *from the first schizophrenia cohort.* 
+#+CAPTION: A log-linear relationship
+#+CAPTION: between time as measured in days from baseline
+#+CAPTION: and thinking disturbance symptoms was evident.
+#+CAPTION: Partial pooling regularized
+#+CAPTION: the individual slopes, i.e., the influence
+#+CAPTION: of outliers with only few assessments was attenuated. 
+#+CAPTION: *B.* *The partial pooling effect*
+#+CAPTION: *is demonstrated by the individual responses being*
+#+CAPTION: *pulled toward the average treatment effect.*
+#+CAPTION: As a consequence, outliers are less influential,
+#+CAPTION: as is particularly striking for those participants 
+#+CAPTION: with few assessments. 
+#+CAPTION: *C, D.* The same is shown for the second schizophrenia
+#+CAPTION: cohort.
+#+CAPTION: Dotted ellipses indicate confidence regions for the
+#+CAPTION: average treatment effect (10%, 30%, 50%, 70%, 90%, 
+#+CAPTION: respectively). 
+#+ATTR_LATEX: :width 1.0\textwidth 
+[[file:fe_freesurfer_shrinkage.pdf]]
+
+\clearpage
+
+** Figure PLS brains                                          :ignore:
+#+NAME: cropfigplsbrains
+#+BEGIN_SRC sh :exports results :results silent
+#  pdfcrop ../output/figures/fe_freesurfer_plsbrains.pdf
+#+END_SRC
+#+NAME: figplsbrains
+#+CAPTION: *Correlations of PLS scores with individual treatment* 
+#+CAPTION: *response and contribution of cortical nodes*
+#+CAPTION: *in the schizophrenia cohort*
+#+CAPTION: *(/N/ = src_R[:session]{n_partic}).*
+#+CAPTION: Nodal degree for each of the src_R[:session]{n_nodes}
+#+CAPTION: was entered into a partial least squares (PLS) 
+#+CAPTION: regression, with individual treatment response 
+#+CAPTION: slopes as outcome measure. The first two
+#+CAPTION: PLS components explained a significant proportion
+#+CAPTION: of variance in treatment response. *A, B.* The first
+#+CAPTION: PLS component correlated most strongly with
+#+CAPTION: nodal degree of orbito- and prefrontal cortices
+#+CAPTION: and posterior cingulate cortex. Note that
+#+CAPTION: more negative slopes meant better
+#+CAPTION: treatment response. 
+#+CAPTION: *B, C.* The second PLS component correlated most
+#+CAPTION: most strongly with superior temporal, precentral,
+#+CAPTION: and middle cingulate brain areas.
+#+ATTR_LATEX: :width 1.0\textwidth 
+[[file:fe_freesurfer_plsbrains_dk.pdf]]
+
+\clearpage
+
+* Supplementary Information
+# settings for supplement
+
+\doublespacing
+\makeatletter 
+\renewcommand{\thepage}{S\@arabic\c@page}  
+\renewcommand{\thefigure}{S\@arabic\c@figure}
+\renewcommand{\thetable}{S\@arabic\c@table}  
+\makeatother
+\setcounter{figure}{0}
+\setcounter{table}{0}
+\setcounter{page}{1}
+
+** First cohort: CIDAR trial 
+*** Settings
+The study was conducted at eight area facilities in New York City and
+one facility each in San Antonio, TX and Calgary, Alberta, Canada. All
+sites were not-for-profit institutions (either academic centers,
+community facilities, or public hospitals) located in urban or suburban
+areas, serving diverse communities in terms of economic status and
+racial/ethnic composition. Imaging data was acquired only for
+participants from the site in New York City. Data were collected from
+December 2005 until April 2013.
+
+*** Participants
+Enrolled patients had a current DSM-IV-defined diagnosis of
+schizophrenia, schizophreniform, schizoaffective disorder, or psychotic
+disorder Not Otherwise Specified (NOS) and were between 15-40 years of
+age. At baseline, patients had 2 weeks or less of a lifetime exposure to
+antipsychotic medication treatment (at any dose) and current positive
+symptoms of at least 4 (moderate) on one or more of the Brief
+Psychiatric Rating Scale-Anchored version (BPRS-A) 7 items: conceptual
+disorganization, grandiosity, hallucinatory behavior, or unusual thought
+content. For women, a negative pregnancy test and agreement to use a
+medically accepted birth control method was required.
+
+Exclusion criteria were (1) meeting DSM-IV criteria for current
+substance-induced psychotic disorder, psychotic disorder due to a
+general medical condition, delusional disorder, brief psychotic
+disorder, shared psychotic disorder, or mood disorder (major depression
+or bipolar) with psychotic features; (2) serious neurological or
+endocrine disorder or medical condition/treatment known to affect the
+brain; (3) medical conditions requiring treatment with a medication with
+psychotropic effects; (4) medical contraindications to risperidone or
+aripiprazole treatment; (5) significant risk of suicidal or homicidal
+behavior; (6) any factor (eg, language limitations) that would preclude
+informed consent or participation in study procedures; (7) diagnosis of
+diabetes (defined as fasting plasma glucose >126 mg/dl) or the metabolic
+syndrome (defined as 3 or more of the following: high blood pressure
+(>130/85 mm Hg), truncal obesity (waist circumference >40 inches for men
+and >35 for women), elevated fasting glucose (>110 mg/dl), low,
+high-density lipoprotein (HDL) cholesterol (<40 mg/dl for men and <50
+mg/dl for women), and elevated triglycerides (>150 mg/dl; and (8)
+requiring antidepressant or mood stabilizer treatment.
+
+Written informed consent was obtained from adult participants and the
+legal guardians of participants younger than 18 years. All participants
+under the age of 18 provided written informed assent. The study was
+approved by the Institutional Review Board (IRB) of Northwell Health,
+which served as the central IRB for all clinical sites.
+
+*** Treatment
+The acute trial of aripiprazole vs risperidone treatment lasted 12
+weeks. Participants were stratified by site, previous antipsychotic
+exposure (none vs any), and diagnosis (psychotic disorder NOS vs other
+eligible diagnoses) and were randomly assigned on a 1:1 basis to
+double-masked treatment with either aripiprazole (5-30 mg/d) or
+risperidone (1-6 mg/d). Inclusion criteria required all participants to
+have very limited prior antipsychotic exposure (less than 2 weeks, see
+above); any antipsychotics being taken at study entry were discontinued.
+
+The initial daily dose was 1 study capsule (ie, 5 mg of aripiprazole or
+1 mg of risperidone). Medication doses were advanced according to a
+titration schedule (level 2 at day 4, level 3 at week 1, two level 2
+capsules at week 4, a level 2 and level 3 capsule at week 6, and two
+level 3 capsules at week 8) until response criteria were achieved or
+dose-limiting side effects occurred. Study psychiatrists could advance
+or slow the titration schedule for clinical needs.
+
+*** Assessments
+Initial diagnostic eligibility was established with the Structured
+Clinical Interview for DSM-IV Axis I Disorders (SCID). These data were
+later reviewed in a consensus conference for final diagnostic
+assignment. Symptom assessments using the BRPS-A were done at baseline,
+weekly for 4 weeks, every 2 weeks until week 12. To obtain a measure of
+positive symptoms, we defined thought disturbance [[cite:Robinson2015]]
+as the sum of the following items: conceptual disorganization,
+grandiosity, hallucinatory behavior, and unusual thought
+content. Assessments were performed by a team of central raters that
+traveled to New York area sites in person or used secure
+teleconferencing elsewhere. The same rater performed assessments with
+each participant throughout that individual's study
+participation. Intraclass correlation coefficients for the BPRS items
+were generally high (> 0.9) [[cite:Robinson2015]]. At baseline, trained
+psychometricians administered the MCCB and adhered to procedures
+described in the test manual.
+
+*** Structural magnetic resonance imaging and analysis
+Magnetic resonance imaging exams were conducted on a 3-T scanner (GE
+Signa HDx). We acquired anatomical scans in the coronal plane using an
+inversion-recovery prepared 3D fast spoiled gradient (IR-FSPGR) sequence
+(TR = 7.5 ms, TE = 3 ms, TI = 650 ms matrix = 256 $\times$ 256, FOV =
+240 mm) which produced 216 contiguous images (slice thickness = 1 mm)
+through the whole brain. Image processing and segmentation were
+conducted with the Freesurfer 5.1.0 recon-all pipeline and the
+Desikan-Killiany cortical atlas [[cite:Desikan2006]]. All image
+processing, parcellation, and quality control procedures were conducted
+while blinded to participants' demographic and clinical
+characteristics. Visual inspections for quality assurance were conducted
+and no manual interventions were necessary. 
+
+** Second cohort: OMEGA3 trial
+*** Participants
+For this cohort, we additionally included participants with bipolar
+disorder with psychotic features and participants could have had up to 2
+years of antipsychotic treatment. Many but not all subjects were first
+episode patients. Apart from that, we applied the same inclusion and
+exclusion criteria as in the CIDAR trial (see above). After complete
+description of the study, written informed consent was obtained from
+adult participants and legal guardians of participants younger than 18
+years who provided written assent. The study was approved by the
+Institutional Review Board (IRB) of the Feinstein Institute for Medical
+Research.
+
+*** Assessments
+Initial diagnostic eligibility was established with the Structured
+Clinical Interview for DSM-IV Axis I Disorders (SCID). These data were
+later reviewed in a consensus conference for final diagnostic
+assignment. Assessments of BRPS-A were done at baseline, weekly for 4
+weeks, every 2 weeks until week 12. Thought disturbance was defined as
+the sum of unusual thought content, hallucinations, and conceptual
+disorganization from the BPRS-A. Assessments were performed by trained
+clinical raters at the Zucker Hillside Hospital. The same rater
+performed assessments with each participant throughout that individual's
+study participation.
+
+*** Structural magnetic resonance imaging and analysis
+Magnetic resonance imaging and analysis was conducted similarly as in
+the CIDAR trial (see above).
+
+** Freesurfer processing details
+Briefly, and following a recent thorough description of the
+procedure,[[cite:Wrocklage2017]], this freesurfer processing includes
+motion correction and averaging [[cite:Reuter2010]] of two volumetric T1
+weighted images. Non-brain tissue is then removed with a hybrid
+deformation method,[[cite:Segonne2004]] followed by a Talairach
+transformation and segmentation of subcortical white matter and deep
+gray matter volumetric structures [[cite:Fischl2002, Fischl2004]]
+intensity normalization, tessellation of the gray matter white matter
+boundary, and automated correction of topology.[[cite:Fischl2001,
+Segonne2007]] The next step is surface deformation, guided by intensity
+gradients for optimal placement of gray/white and gray/cerebrospinal
+fluid borders, using the location where the greatest shift in intensity
+defines the transition to the other tissue
+class.[[cite:Dale1999,Fischl2000]]
+
+After completion of the cortical models, final processing steps include
+surface inflation,[[cite:Dale1999]] registration to a spherical atlas
+based on individual cortical folding patterns,[[cite:Fischl1999]] and
+parcellation of the cerebral cortex into units with respect to gyral and
+sulcal structure.[[cite:Desikan2006,Fischl2004a]] Importantly, cortical
+thickness is then measured as the Euclidean distance from the gray/white
+boundary to the gray/CSF boundary at each vertex on the tessellated
+surface.[[cite:Fischl2000]] Procedures for the measurement of cortical
+thickness have been validated against manual measurements
+[[cite:Kuperberg2003]] and have shown high test-retest reliability.
+[[cite:Han2006, Reuter2012]]
+
+\setcounter{figure}{0}
+\setcounter{table}{0}
+
+\clearpage
+
+** Individual response estimation
+Assuming linear improvement over time, individual treatment response can
+be modeled as
+\begin{equation}
+Y_{ij} = \beta_{0j} + \beta_{1j}\,X_{ij} + \epsilon_{ij},
+\end{equation}
+
+where $Y$ is the outcome measure (i.e., the symptoms) at time $i$ for
+patient $j$, \beta_{0j} is the intercept and \beta_{1j} is the slope for
+patient $j$, X_{ij} is a vector of the time predictor (measured in
+log-transformed days from baseline), while \epsilon is the error term,
+which is assumed to be normally distributed with mean zero and some
+unknown variance,
+
+\begin{equation}
+\epsilon_{ij} \sim \mathcal{N}(0, \sigma^2).
+\end{equation}
+
+This level-1 model thus indicates each patient's treatment response over
+time. It can be extended to a level-2 model by including sample
+averages for intercept and slope,
+
+\begin{equation}
+\begin{aligned}
+\beta_{0j} &= \gamma_{00} + U_{0j} \\  
+\end{aligned}
+\end{equation}
+\begin{equation}
+\begin{aligned}
+\beta_{1j} &= \gamma_{10} + U_{1j}
+\end{aligned}
+\end{equation}
+
+with
+
+\begin{equation}
+\begin{aligned}
+\left( \begin{tabular}{c}
+  $U_{0j}$ \\
+  $U_{1j}$
+  \end{tabular} \right) 
+\sim \mathcal{N} 
+ \left( \begin{tabular}{ccc}
+  0, & $\tau^{2}_{00}$ & $\tau_{01}$ \\
+  0, & $\tau_{01}$ & $\tau^{2}_{10}$ 
+  \end{tabular} \right),
+\end{aligned}
+\end{equation}
+
+where $U_{0j}$ is the random intercept and $U_{1j}$ is the random slope,
+that is, the individual deviances from the sample intercepts and slopes,
+respectively, both with zero mean and some unknown variances. Note that
+the random slope, $U_{1j}$, was the measure of interest in this study
+and used as primary outcome.
+
+The covariance between the random intercept and the random slope is
+indicated with \tau_{01}. This hierarchical unconditional growth model
+describes the average symptom trajectory while accounting for individual
+deviances from both the intercept and the slope. 
+
+Due to the well-known challenges in assessing this specific patient
+population, missed assessments and minor variations in rating intervals
+were to be expected. We dealt with them by calculating the exact days
+from baseline when the ratings were performed, and used days rather than
+weeks as the time variable in our analysis. To account for the
+log-linear decrease of symptoms over time (Fig. [[figaveragetx]]) we
+used the log-transformed number of days.
+
+An important difference from previous strategies to characterize
+individual treatment response is that we did not distinguish, a priori,
+between patients who met or did not meet a defined response
+criterion. Rather, our method allowed for the estimation of individual
+treatment response. While only src_R[:session]{n_partic}
+{{{results(82)}}} participants had MRI baseline data available, the full
+sample of src_R[:session]{n_partic_full_bothsamples} {{{results(248)}}}
+participants was utilized to obtain more precise estimates of the
+individual treatment response slopes. The rationale for this approach is
+that information from the full sample can be used to estimate individual
+slopes more conservatively because the average treatment effect of the
+full sample provides a reasonable prior assumption for each individual
+response slope.[[cite:Hedeker2006]] Thus, similar to full Bayesian
+estimation, a prior enters the statistical calculation; however, here
+the prior is derived empirically from the data, hence this method bares
+similarity with Empirical Bayes. The result is that individual responses
+are estimated to be closer to the average treatment response, an effect
+that is well-known as partial pooling or shrinkage.[[cite:Gelman2013]]
+The partial pooling effect for the two schizophrenia cohorts can be
+visualized by showing how individual treatment effects are pulled toward
+the average treatment effect (Fig. [[figshrinkage]]). Partial pooling
+makes the analysis less susceptible to individual outliers by
+attenuating the impact of participants with only few assessments
+(Fig. [[figshrinkage]]), which is of particular importance in estimating
+treatment response in relatively small samples.
+
+Thus, individual slopes were estimated using mixed models with Restricted
+Maximum Likelihood (REML) and used as outcome measure in subsequent
+analyses.
+
+\clearpage
+\singlespacing
+
+** SFigure Cohort similarity                                    :ignore:
+#+NAME: cropfigaveragetx
+#+BEGIN_SRC sh :exports results :results silent
+# if [ ! -f ../lib/fe_averagetx-crop.pdf]; then 
+    pdfcrop ../output/figures/fe_averagetx.pdf
+# fi
+#+END_SRC
+#+CAPTION: *Both schizophrenia cohorts showed*
+#+CAPTION: *a similar average treatment effect.*
+#+CAPTION: Means with 95% confidence intervals 
+#+CAPTION: are shown.
+#+CAPTION: In both cohorts, symptoms decreased in 
+#+CAPTION: a log-linear fashion with 
+#+CAPTION: increasing weeks. To increase statistical
+#+CAPTION: power, both cohorts were 
+#+CAPTION: thus concatenated for the subsequent 
+#+CAPTION: analysis of treatment response prediction. 
+#+NAME: figaveragetx
+#+ATTR_LATEX: :width 1.0\textwidth 
+[[file:fe_averagetx-crop.pdf]]
+
+\clearpage
+
+** SFigure Delta group diff                                     :ignore:
+#+NAME: cropfigdeltadegreesbrain
+#+BEGIN_SRC sh :exports results :results silent
+# if [ ! -f ../lib/fe_freesurfer-tvals_brain-crop.pdf]; then 
+    pdfcrop ../output/figures/fe_freesurfer_deltadegrees_brain_dk.pdf
+#	fi
+#+END_SRC
+#+CAPTION: *Significant group differences in nodal degree*
+#+CAPTION: *between patients with psychosis and healthy*
+#+CAPTION: *controls.*
+#+CAPTION: Positive values indicate higher nodal 
+#+CAPTION: degrees in patients compared to controls.
+#+NAME: figdeltadegreesbrain
+#+ATTR_LATEX: :width 1.0\textwidth 
+[[file:fe_freesurfer_deltadegrees_brain_dk-crop.pdf]]
+
+\clearpage
+
+** SFigure thickness group diff                                 :ignore:
+#+NAME: cropfigtvals
+#+BEGIN_SRC sh :exports results :results silent
+# if [ ! -f ../lib/fe_freesurfer-tvals_brain-crop.pdf]; then 
+    pdfcrop ../output/figures/fe_freesurfer_tvals_brain_dk.pdf
+#	fi
+#+END_SRC
+#+CAPTION: *Group differences in cortical thickness*.
+#+CAPTION: Cortical thickness was reduced in
+#+CAPTION: patients compared to controls most
+#+CAPTION: prominently in the left paracentral 
+#+CAPTION: and left parahippocampal gyrus.
+#+CAPTION: Note that these reductions
+#+CAPTION: did not survive rigid
+#+CAPTION: correction for multiple comparisons using
+#+CAPTION: false discovery rate (FDR /q/ < 0.05).
+#+NAME: figtvalsbrain
+#+ATTR_LATEX: :width 1.0\textwidth 
+[[file:fe_freesurfer_tvals_brain_dk-crop.pdf]]
+
+\clearpage
+

@@ -1,0 +1,65 @@
+
+# Structural similarity networks and treatment response
+
+
+
+# Author
+
+Philipp Homan <phoman1 at northwell dot edu>
+
+
+# Getting Started
+
+This repository contains all the data and analysis code to reproduce the
+manuscript " Structural similarity networks predict clinical outcome in
+early-phase schizophrenia". These instructions describe how to obtain a
+copy of the project up and running on your local machine for reproducing
+the analysis described in the manuscript. The repository contains a
+Makefile which reflects the dependencies of the analysis; analysis,
+figures and manuscript can be produced by simply typing 'make' from the
+Unix command line.
+
+
+## Prerequisites
+
+All analyses were conducted with the R software 
+R version 3.3.2 (2016-10-31).  Mixed models were
+estimated using the lme4 library, partial least squares regression were
+computed with the pls library, and brain graph metrics with the
+brainGraph and igraph libraries.  
+Python 2.7.13 and 
+pysurfer (0.7) were used for visualizing the imaging
+results. The full session info under R can be found at the end of this
+file
+
+
+# Installing
+
+Clone the repository or download the zip file and run 'unzip ssn.zip'
+from the command line.
+
+
+# Running the analysis
+
+Change to the ssn directory and run 'make analysis'.
+
+
+# Producing the figures
+
+Change to the ssn directory and run 'make figures'. The figures can then
+be found in output/figures.
+
+
+# Producing the manuscript
+
+Change to the ssn directory and run 'make manuscript'. The manuscript
+will be in src/fe<sub>ms.pdf</sub>
+
+
+# Built With
+
+Org-mode 9.1.9.
+
+
+# Session info
+

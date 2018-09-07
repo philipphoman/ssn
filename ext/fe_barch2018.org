@@ -1,0 +1,34 @@
+# This buffer is for text that is not saved, and for Lisp evaluation.
+# To create a file, visit it with <open> and enter text in its buffer.
+* Deanna Barch visit
+- Gordon parcellation (because of course of development)
+- Better parcellation than others?
+- Look up: paper on reinforcement learning in mania (increased reward
+  sensitivity in acute mania)
+
+** How does it relate to psychosis and cognition?
+- Same network architecture in sz?
+- Basic network organization looks similar in cortical networks
+- What about the magnitude of the relationship of subnetworks?
+- Relevant for cognitive function: frontoparietal (goal-represnation,
+  task-control), cingulo-opercular (task control; conflict processing);
+  default network (attending to internal states; needs to shut off
+  during tasks)
+
+* Graph theory
+- Efficiency: easy of information flow in a network; high efficiency is
+  shorter path length
+- Hub behavior: how connected is a region?
+- Participation coefficient: how many subnetworks is a node connected with?
+
+* Global efficiency and cognition
+- Sheffield paper 2017, JAM psych: cognitive efficiency transdiagnostically 
+- What does it represent biologically? Is it reflecting disrupted development
+of white matter connections? DTI studies need to show this.
+
+* Cingulo-Opercular network global efficiency
+- Seems to be important in schizophrenia and cognition
+
+
+
+																										 
